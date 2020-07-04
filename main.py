@@ -162,6 +162,7 @@ def move_upks(mode, category):
 def move_files(files, src, dst):
     errors_path = 0
     errors_checksum = 0
+    errors_permission = 0
     # Take a list of files and removes them after moving them
     for file in files:
         file_name = file.strip()
@@ -169,25 +170,31 @@ def move_files(files, src, dst):
             file_name += ".upk"
         file_path = src + file_name
         log("Copying " + file_path + " to " + dst + file_name + "...")
-        if path.exists(file_path):
-            source_file = checksum(file_path)
-            copyfile(file_path, dst + file_name)
-            target_file = checksum(dst + file_name)
-            log("Validating checksum...")
-            if source_file == target_file:
-                log("Checksum is valid! Removing " + file_path + "...")
-                remove(file_path)
+        try:
+            if path.exists(file_path):
+                source_file = checksum(file_path)
+                copyfile(file_path, dst + file_name)
+                target_file = checksum(dst + file_name)
+                log("Validating checksum...")
+                if source_file == target_file:
+                    log("Checksum is valid! Removing " + file_path + "...")
+                    remove(file_path)
+                else:
+                    log("ERROR: Checksum is invalid!")
+                    errors_checksum += 1
+                    if path.exists(dst + file_name):
+                        remove(dst + file_name)
             else:
-                log("ERROR: Checksum is invalid!")
-                errors_checksum += 1
-                if path.exists(dst + file_name):
-                    remove(dst + file_name)
-        else:
-            log("ERROR: File not found! Skipping...")
-            errors_path += 1
+                log("ERROR: File not found! Skipping...")
+                errors_path += 1
+        except PermissionError:
+            log("ERROR: Permission denied! Skipping...")
+            errors_permission += 1
     print("... all file operations finished!")
     if errors_checksum > 0:
-        print("File checksum errors: " + str(errors_checksum))
+        print("File checksum errors: " + str(errors_checksum) + "\n" + "Check your hard drive for errors!")
+    if errors_permission > 0:
+        print("Permission denied errors: " + str(errors_path) + "\n" + "Try running as admin!")
     if errors_path > 0:
         print("File not found errors: " + str(errors_path))
 
