@@ -1,0 +1,7 @@
+.DS_STORE
+
+.idea
+backup/*.upk
+log/*.txt
+*.code-workspace
+settings.json

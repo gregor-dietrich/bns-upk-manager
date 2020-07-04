@@ -1,0 +1,237 @@
+from datetime import datetime
+from hashlib import sha1
+import json
+from os import mkdir, listdir, path, remove
+from shutil import copyfile
+from sys import exit
+from winreg import ConnectRegistry, EnumValue, HKEY_CURRENT_USER, OpenKey
+
+charset = "utf-8"
+settings_location = "./settings.json"
+version = "0.21"
+
+
+def init():
+    print("Initializing UPK Manager for Blade & Soul by Takku#0822 v" + version + "...")
+    # Check if required data is present
+    if not path.exists("./data/animations.json") or not path.exists("./data/effects.json"):
+        input("CRITICAL ERROR: Required data is missing! Ragequitting...")
+        exit()
+    # Generate default settings.json if there is none
+    if not path.exists(settings_location):
+        print("File settings.json not found! Generating default...\n"
+              + "Trying to detect game folder...")
+        settings_values = {
+            "backup_location": "./backup/",
+            "game_location": "C:/Program Files (x86)/NCSOFT/BnS/",
+            "log_save": 0,
+            "log_show": 1,
+            "remove_animations":
+            [
+                "Blade Master",
+                "Kung-Fu Master",
+                "Force Master",
+                "Destroyer",
+                "Gunslinger",
+                "Assassin",
+                "Summoner",
+                "Blade Dancer",
+                "Warlock",
+                "Soul Fighter",
+                "Warden",
+                "Archer"
+            ],
+            "remove_effects":
+            [
+                "Blade Master",
+                "Kung-Fu Master",
+                "Force Master",
+                "Destroyer",
+                "Gunslinger",
+                "Assassin",
+                "Summoner",
+                "Blade Dancer",
+                "Warlock",
+                "Soul Fighter",
+                "Warden",
+                "Archer",
+                "other"
+            ]
+        }
+        game_path = find_game_path()
+        if game_path is not None and path.exists(game_path):
+            print("Success! Saving path to settings.json...")
+            settings_values["game_location"] = game_path
+        else:
+            print("Couldn't find game location. Please adjust manually in settings.json!")
+        with open(settings_location, "w", encoding=charset) as file:
+            json.dump(settings_values, file, sort_keys=True, indent=4)
+        print("Successfully generated. Please adjust your settings.json!")
+        input("Save your changes to settings.json and press Enter to continue...")
+    # Load settings.json as dictionary
+    print("Loading settings from settings.json...")
+    with open(settings_location, "r", encoding=charset) as file:
+        values = file.read()
+    try:
+        settings_values = json.loads(values)
+        settings_values["game_location"] += "contents/bns/CookedPC/"
+        # Create backup folder if there is none
+        if not path.exists(settings_values["backup_location"]):
+            mkdir(settings_values["backup_location"])
+        print("Successfully initialized. Welcome, Cricket!")
+        return settings_values
+    except json.JSONDecodeError:
+        print("ERROR: Invalid JSON syntax detected!")
+        if input("Delete settings.json and generate default (y/n)? ") == "y":
+            remove(settings_location)
+            return init()
+        else:
+            print("Exiting...")
+            exit()
+
+
+def checksum(file_name):
+    hash_obj = sha1()
+    with open(file_name, "rb") as file:
+        for chunk in iter(lambda: file.read(4096), b""):
+            hash_obj.update(chunk)
+    return hash_obj.hexdigest()
+
+
+def find_game_path():
+    default = "C:/Program Files (x86)/NCSOFT/BnS/"
+    if path.exists(default):
+        return default
+    reg = ConnectRegistry(None, HKEY_CURRENT_USER)
+    key = OpenKey(reg, "Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\Shell\\MuiCache\\")
+    count = 0
+    try:
+        while True:
+            name, value, value_type = EnumValue(key, count)
+            if value == "Blade & Soul by bloodlust(x86)":
+                game_path = name.split(".")[0].split("\\")
+                game_path.pop()
+                game_path.pop()
+                return "/".join(game_path) + "/"
+            count += 1
+    except (WindowsError, OSError):
+        pass
+
+
+def log(string):
+    if settings["log_save"] or settings["log_show"]:
+        # Generate Timestamp
+        timestamp = "(" + datetime.now().strftime("%H:%M:%S") + ") "
+    # Save Logs
+    if settings["log_save"]:
+        logfile = "./log/" + datetime.now().strftime("%Y.%m.%d.txt")
+        if not path.exists("./log/"):
+            mkdir("./log/")
+        with open(logfile, "a", encoding=charset) as file:
+            file.write(timestamp + string + "\n")
+    # Show Logs
+    if settings["log_show"]:
+        print(timestamp + string)
+
+
+def move_upks(mode, category):
+    if mode == "remove":
+        src, dst = settings["game_location"], settings["backup_location"]
+    elif mode == "restore":
+        src, dst = settings["backup_location"], settings["game_location"]
+    else:
+        print("ERROR: move_upks() can't be called without defining a mode!")
+        return
+    if category == "all":
+        move_upks(mode, "animations")
+        move_upks(mode, "effects")
+    else:
+        # Generate list of files from json
+        upk_list = []
+        with open("./data/" + category + ".json", "r", encoding=charset) as upks:
+            values = upks.read()
+        upk_values = json.loads(values)
+        for player_class in upk_values.keys():
+            if player_class not in settings["remove_" + category]:
+                continue
+            for value in upk_values[player_class]:
+                upk_list.append(value)
+        move_files(upk_list, src, dst)
+
+
+def move_files(files, src, dst):
+    errors_path = 0
+    errors_checksum = 0
+    # Take a list of files and removes them after moving them
+    for file in files:
+        file_name = file.strip()
+        if not file_name.endswith(".upk"):
+            file_name += ".upk"
+        file_path = src + file_name
+        log("Copying " + file_path + " to " + dst + file_name + "...")
+        if path.exists(file_path):
+            source_file = checksum(file_path)
+            copyfile(file_path, dst + file_name)
+            target_file = checksum(dst + file_name)
+            log("Validating checksum...")
+            if source_file == target_file:
+                log("Checksum is valid! Removing " + file_path + "...")
+                remove(file_path)
+            else:
+                log("ERROR: Checksum is invalid!")
+                errors_checksum += 1
+                if path.exists(dst + file_name):
+                    remove(dst + file_name)
+        else:
+            log("ERROR: File not found! Skipping...")
+            errors_path += 1
+    print("... all file operations finished!")
+    if errors_checksum > 0:
+        print("File checksum errors: " + str(errors_checksum))
+    if errors_path > 0:
+        print("File not found errors: " + str(errors_path))
+
+
+def restore_all():
+    upk_list = listdir(settings["backup_location"])
+    if len(upk_list) == 0:
+        print("No files to restore!")
+    else:
+        move_files(upk_list, settings["backup_location"], settings["game_location"])
+
+
+# Initialize Settings
+settings = init()
+
+# Do something!
+while True:
+    print("(1) Apply current profile (settings.json)")
+    print("(2) Restore EVERYTHING from backup folder")
+    print("(3) Detect Blade & Soul folder")
+    print("(0) Exit UPK Manager")
+
+    try:
+        command = int(input("What would you like to do: "))
+        if command == 0:
+            print("Goodbye, Cricket!")
+            break
+        elif command in range(4):
+            if command == 1:
+                restore_all()
+                move_upks("remove", "all")
+            elif command == 2:
+                restore_all()
+            elif command == 3:
+                game_folder = find_game_path()
+                if game_folder is None:
+                    print("Couldn't detect game folder.")
+                else:
+                    print("Success! Saving path to settings.json...")
+                    settings["game_location"] = game_folder
+                    with open(settings_location, "w", encoding=charset) as settings_file:
+                        json.dump(settings, settings_file, sort_keys=True, indent=4)
+                    settings["game_location"] += "contents/bns/CookedPC/"
+        else:
+            raise ValueError
+    except ValueError:
+        print("Invalid input: Enter an integer between 0 and 3!")
