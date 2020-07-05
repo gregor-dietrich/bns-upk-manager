@@ -135,11 +135,11 @@ def search_reg(scope):
                     game_path = name.split(".")[0].split("\\")
                     game_path.pop()
                     game_path.pop()
-                    log("Game path found in HKCU!")
+                    print("Game path found in HKCU!")
                     return "/".join(game_path) + "/"
             elif scope == "HKLM":
                 if name == "BaseDir":
-                    log("Game path found in HKLM!")
+                    print("Game path found in HKLM!")
                     return value
             count += 1
     except (WindowsError, OSError, FileNotFoundError):
