@@ -8,7 +8,7 @@ from winreg import ConnectRegistry, EnumValue, HKEY_CURRENT_USER, HKEY_LOCAL_MAC
 
 charset = "utf-8"
 settings_location = "./settings.json"
-version = "0.3"
+version = "0.31"
 
 
 def init():
