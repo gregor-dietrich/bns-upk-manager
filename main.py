@@ -1,14 +1,16 @@
+from bs4 import BeautifulSoup
 from datetime import datetime
 from hashlib import sha1
 import json
-from os import mkdir, listdir, path, remove
+from os import mkdir, listdir, path, remove, system
+from requests import get
 from shutil import copyfile
 from sys import exit
 from winreg import ConnectRegistry, EnumValue, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, OpenKey
 
 charset = "utf-8"
 settings_location = "./settings.json"
-version = "0.31"
+version = "0.4"
 
 
 def init():
@@ -234,6 +236,54 @@ def restore_all():
     else:
         move_files(upk_list, settings["backup_location"], settings["game_location"])
 
+
+def update(repo="gregor-dietrich/bns-upk-manager", current_version=version):
+    print("Checking for updates...")
+    response = get("https://github.com/" + repo + "/releases/latest")
+    doc = BeautifulSoup(response.text, "html.parser")
+    latest_version = doc.select_one("div.label-latest div ul li a")["title"].split("v")[1]
+    file_url = "https://github.com" + doc.select_one("details div.Box div div.Box-body a")["href"]
+    file_name = file_url.split("/")[-1]
+    if float(latest_version) > float(current_version):
+        decision = ""
+        while decision not in ["y", "n"]:
+            decision = input("New version found! Download now (y/n)? ")
+            if decision == "y":
+                break
+            elif decision == "n":
+                return
+        if not path.exists("./" + file_name):
+            file_binary = get(file_url)
+            with open("./" + file_name, "wb") as file:
+                file.write(file_binary.content)
+        if file_name.endswith(".zip"):
+            from zipfile import ZipFile
+        elif file_name.endswith(".7z"):
+            from py7zr import SevenZipFile as ZipFile
+        else:
+            print("Invalid archive format!")
+            return
+        with ZipFile("./" + file_name, "r") as archive:
+            archive.extractall("./download")
+        with open("./update.bat", "w") as batch:
+            batch.write("@echo off\n")
+            patch_files = listdir("./download")
+            for patch_file in patch_files:
+                if patch_file.endswith(".exe"):
+                    batch.write("taskkill /f /im " + patch_file + "\n")
+            batch.write("@ping -n 3 localhost> nul\n" +
+                        "robocopy download\\ .\\ *.* /move /s /is /it\n" +
+                        "rmdir /s /q download\n" +
+                        "del " + file_name + "\n"
+                        "del update.bat")
+        system('cmd /c "update.bat"')
+        exit()
+    else:
+        print("Already up to date!")
+
+
+# Check for Updates
+update()
 
 # Initialize Settings
 settings = init()
