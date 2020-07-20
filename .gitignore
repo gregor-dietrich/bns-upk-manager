@@ -1,6 +1,7 @@
 .DS_STORE
 
 .idea
+__pycache__
 backup/*.upk
 log/*.txt
 *.code-workspace
