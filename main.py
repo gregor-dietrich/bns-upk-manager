@@ -11,7 +11,7 @@ from requests import get
 
 charset = "utf-8"
 settings_location = "./settings.json"
-version = "0.44"
+version = "0.4.5"
 
 
 def init():
@@ -55,7 +55,7 @@ def init():
     print("Initializing UPK Manager for Blade & Soul by Takku#0822 v" + version + "...")
     # Check if required data is present
     if not path.exists("./data/animations.json") or not path.exists("./data/effects.json"):
-        input("CRITICAL ERROR: Required data is missing! Ragequitting...")
+        input("CRITICAL ERROR: Required data is missing! Exiting...")
         exit()
     # Generate default settings.json if there is none
     if not path.exists(settings_location):
@@ -119,10 +119,10 @@ def find_game_path():
         if "\\" in result:
             result = result.split("\\")
             result = "/".join(result)
+        if path.exists(result):
+            return result
     except TypeError:
         pass
-    if path.exists(result):
-        return result
 
 
 def search_reg(scope):
