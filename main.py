@@ -1,12 +1,13 @@
-from bs4 import BeautifulSoup
+import json
 from datetime import datetime
 from hashlib import sha1
-import json
 from os import mkdir, listdir, path, remove, system
-from requests import get
 from shutil import copyfile
 from sys import exit
 from winreg import ConnectRegistry, EnumValue, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, OpenKey
+
+from bs4 import BeautifulSoup
+from requests import get
 
 charset = "utf-8"
 settings_location = "./settings.json"
@@ -286,7 +287,7 @@ def update(repo="gregor-dietrich/bns-upk-manager", current_version=version):
                             "robocopy download\\ .\\ *.* /move /s /is /it\n" +
                             "rmdir /s /q download\n" +
                             "del " + file_name + "\n"
-                            "del update.bat\n" +
+                                                 "del update.bat\n" +
                             "tk_upk_manager.exe")
             system('cmd /c "update.bat"')
             exit()
