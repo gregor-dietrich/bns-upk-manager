@@ -10,25 +10,16 @@ from winreg import ConnectRegistry, EnumValue, HKEY_CURRENT_USER, HKEY_LOCAL_MAC
 
 charset = "utf-8"
 settings_location = "./settings.json"
-version = "0.4"
+version = "0.43"
 
 
 def init():
-    print("Initializing UPK Manager for Blade & Soul by Takku#0822 v" + version + "...")
-    # Check if required data is present
-    if not path.exists("./data/animations.json") or not path.exists("./data/effects.json"):
-        input("CRITICAL ERROR: Required data is missing! Ragequitting...")
-        exit()
-    # Generate default settings.json if there is none
-    if not path.exists(settings_location):
-        print("File settings.json not found! Generating default...\n"
-              + "Trying to detect game folder...")
-        settings_values = {
-            "backup_location": "./backup/",
-            "game_location": "C:/Program Files (x86)/NCSOFT/BnS/",
-            "log_save": 0,
-            "log_show": 1,
-            "remove_animations":
+    default_values = {
+        "backup_location": "./backup/",
+        "game_location": "C:/Program Files (x86)/NCSOFT/BnS/",
+        "log_save": 0,
+        "log_show": 1,
+        "remove_animations":
             [
                 "Blade Master",
                 "Kung-Fu Master",
@@ -43,7 +34,7 @@ def init():
                 "Warden",
                 "Archer"
             ],
-            "remove_effects":
+        "remove_effects":
             [
                 "Blade Master",
                 "Kung-Fu Master",
@@ -59,15 +50,24 @@ def init():
                 "Archer",
                 "other"
             ]
-        }
+    }
+    print("Initializing UPK Manager for Blade & Soul by Takku#0822 v" + version + "...")
+    # Check if required data is present
+    if not path.exists("./data/animations.json") or not path.exists("./data/effects.json"):
+        input("CRITICAL ERROR: Required data is missing! Ragequitting...")
+        exit()
+    # Generate default settings.json if there is none
+    if not path.exists(settings_location):
+        print("File settings.json not found! Generating default...\n"
+              + "Trying to detect game folder...")
         game_path = find_game_path()
         if game_path is not None and path.exists(game_path):
             print("Success! Saving path to settings.json...")
-            settings_values["game_location"] = game_path
+            default_values["game_location"] = game_path
         else:
             print("Couldn't find game location. Please adjust manually in settings.json!")
         with open(settings_location, "w", encoding=charset) as file:
-            json.dump(settings_values, file, sort_keys=True, indent=4)
+            json.dump(default_values, file, sort_keys=True, indent=4)
         print("Successfully generated. Please adjust your settings.json!")
         input("Save your changes to settings.json and press Enter to continue...")
     # Load settings.json as dictionary
@@ -76,6 +76,9 @@ def init():
         values = file.read()
     try:
         settings_values = json.loads(values)
+        for k in default_values.keys():
+            if k not in settings_values.keys():
+                settings_values[k] = default_values[k]
         settings_values["game_location"] += "contents/bns/CookedPC/"
         # Create backup folder if there is none
         if not path.exists(settings_values["backup_location"]):
@@ -283,7 +286,8 @@ def update(repo="gregor-dietrich/bns-upk-manager", current_version=version):
                             "robocopy download\\ .\\ *.* /move /s /is /it\n" +
                             "rmdir /s /q download\n" +
                             "del " + file_name + "\n"
-                            "del update.bat")
+                            "del update.bat\n" +
+                            "tk_upk_manager.exe")
             system('cmd /c "update.bat"')
             exit()
         else:
