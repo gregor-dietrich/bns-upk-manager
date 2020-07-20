@@ -11,7 +11,7 @@ from requests import get
 
 charset = "utf-8"
 settings_location = "./settings.json"
-version = "0.4.2"
+version = "0.4.5"
 
 
 def init():
@@ -294,7 +294,7 @@ def update(repo="gregor-dietrich/bns-upk-manager", current_version=version):
             exit()
         else:
             print("Already up to date!")
-    except (ValueError, IndexError):
+    except (TypeError, ValueError, IndexError):
         print("Something went wrong! Please try again later.")
 
 
