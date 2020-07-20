@@ -11,7 +11,7 @@ from requests import get
 
 charset = "utf-8"
 settings_location = "./settings.json"
-version = "0.43"
+version = "0.44"
 
 
 def init():
@@ -286,8 +286,8 @@ def update(repo="gregor-dietrich/bns-upk-manager", current_version=version):
                 batch.write("@ping -n 3 localhost> nul\n" +
                             "robocopy download\\ .\\ *.* /move /s /is /it\n" +
                             "rmdir /s /q download\n" +
-                            "del " + file_name + "\n"
-                                                 "del update.bat\n" +
+                            "del " + file_name + "\n" +
+                            "del update.bat\n" +
                             "tk_upk_manager.exe")
             system('cmd /c "update.bat"')
             exit()
