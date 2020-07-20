@@ -111,9 +111,12 @@ def find_game_path():
     if result is None:
         result = search_reg("HKLM")
     # Fix Backslashes
-    if "\\" in result:
-        result = result.split("\\")
-        result = "/".join(result)
+    try:
+        if "\\" in result:
+            result = result.split("\\")
+            result = "/".join(result)
+    except TypeError:
+        pass
     if path.exists(result):
         return result
 
