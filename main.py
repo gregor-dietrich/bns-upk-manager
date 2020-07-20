@@ -11,7 +11,7 @@ from requests import get
 
 charset = "utf-8"
 settings_location = "./settings.json"
-version = "0.4.5"
+version = "0.4.2"
 
 
 def init():
@@ -253,7 +253,8 @@ def update(repo="gregor-dietrich/bns-upk-manager", current_version=version):
         return
     try:
         doc = BeautifulSoup(response.text, "html.parser")
-        latest_version = doc.select_one("div.label-latest div ul li a")["title"].split("v")[1]
+        current_version = "".join(current_version.split("."))
+        latest_version = "".join(doc.select_one("div.label-latest div ul li a")["title"].split("v")[1].split("."))
         file_url = "https://github.com" + doc.select_one("details div.Box div div.Box-body a")["href"]
         file_name = file_url.split("/")[-1]
         if float(latest_version) > float(current_version):
@@ -293,7 +294,7 @@ def update(repo="gregor-dietrich/bns-upk-manager", current_version=version):
             exit()
         else:
             print("Already up to date!")
-    except (TypeError, ValueError, IndexError):
+    except (ValueError, IndexError):
         print("Something went wrong! Please try again later.")
 
 
