@@ -1,112 +1,17 @@
 import json
 from datetime import datetime
-from hashlib import sha1
-from os import mkdir, listdir, path, remove, system
+from os import listdir, path, remove
 from shutil import copyfile
-from sys import exit
 from winreg import ConnectRegistry, EnumValue, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, OpenKey
 
-from bs4 import BeautifulSoup
-from requests import get
-
-charset = "utf-8"
-settings_location = "./settings.json"
-version = "0.4.5"
-
-
-def init():
-    default_values = {
-        "backup_location": "./backup/",
-        "game_location": "C:/Program Files (x86)/NCSOFT/BnS/",
-        "log_save": 0,
-        "log_show": 1,
-        "remove_animations":
-            [
-                "Blade Master",
-                "Kung-Fu Master",
-                "Force Master",
-                "Destroyer",
-                "Gunslinger",
-                "Assassin",
-                "Summoner",
-                "Blade Dancer",
-                "Warlock",
-                "Soul Fighter",
-                "Warden",
-                "Archer"
-            ],
-        "remove_effects":
-            [
-                "Blade Master",
-                "Kung-Fu Master",
-                "Force Master",
-                "Destroyer",
-                "Gunslinger",
-                "Assassin",
-                "Summoner",
-                "Blade Dancer",
-                "Warlock",
-                "Soul Fighter",
-                "Warden",
-                "Archer",
-                "other"
-            ]
-    }
-    print("Initializing UPK Manager for Blade & Soul by Takku#0822 v" + version + "...")
-    # Check if required data is present
-    if not path.exists("./data/animations.json") or not path.exists("./data/effects.json"):
-        input("CRITICAL ERROR: Required data is missing! Exiting...")
-        exit()
-    # Generate default settings.json if there is none
-    if not path.exists(settings_location):
-        print("File settings.json not found! Generating default...\n"
-              + "Trying to detect game folder...")
-        game_path = find_game_path()
-        if game_path is not None and path.exists(game_path):
-            print("Success! Saving path to settings.json...")
-            default_values["game_location"] = game_path
-        else:
-            print("Couldn't find game location. Please adjust manually in settings.json!")
-        with open(settings_location, "w", encoding=charset) as file:
-            json.dump(default_values, file, sort_keys=True, indent=4)
-        print("Successfully generated. Please adjust your settings.json!")
-        input("Save your changes to settings.json and press Enter to continue...")
-    # Load settings.json as dictionary
-    print("Loading settings from settings.json...")
-    with open(settings_location, "r", encoding=charset) as file:
-        values = file.read()
-    try:
-        settings_values = json.loads(values)
-        for k in default_values.keys():
-            if k not in settings_values.keys():
-                settings_values[k] = default_values[k]
-        settings_values["game_location"] += "contents/bns/CookedPC/"
-        # Create backup folder if there is none
-        if not path.exists(settings_values["backup_location"]):
-            mkdir(settings_values["backup_location"])
-        print("Successfully initialized. Welcome, Cricket!")
-        return settings_values
-    except json.JSONDecodeError:
-        print("ERROR: Invalid JSON syntax detected!")
-        if input("Delete settings.json and generate default (y/n)? ") == "y":
-            remove(settings_location)
-            return init()
-        else:
-            print("Exiting...")
-            exit()
-
-
-def checksum(file_name):
-    hash_obj = sha1()
-    with open(file_name, "rb") as file:
-        for chunk in iter(lambda: file.read(4096), b""):
-            hash_obj.update(chunk)
-    return hash_obj.hexdigest()
+from init import charset, default_values, init, settings_location
+from update import update
+from tkutil import checksum
 
 
 def find_game_path():
     # Try default install dir
-    default = "C:/Program Files (x86)/NCSOFT/BnS/"
+    default = default_values["game_location"]
     if path.exists(default):
         return default
     # Search HKCU
@@ -123,6 +28,22 @@ def find_game_path():
             return result
     except TypeError:
         pass
+
+
+def log(string):
+    if settings["log_save"] or settings["log_show"]:
+        # Generate Timestamp
+        timestamp = "(" + datetime.now().strftime("%H:%M:%S") + ") "
+    # Save Logs
+    if settings["log_save"]:
+        logfile = "./log/" + datetime.now().strftime("%Y.%m.%d.txt")
+        if not path.exists("./log/"):
+            mkdir("./log/")
+        with open(logfile, "a", encoding=charset) as file:
+            file.write(timestamp + string + "\n")
+    # Show Logs
+    if settings["log_show"]:
+        print(timestamp + string)
 
 
 def search_reg(scope):
@@ -153,47 +74,6 @@ def search_reg(scope):
             count += 1
     except (WindowsError, OSError, FileNotFoundError):
         pass
-
-
-def log(string):
-    if settings["log_save"] or settings["log_show"]:
-        # Generate Timestamp
-        timestamp = "(" + datetime.now().strftime("%H:%M:%S") + ") "
-    # Save Logs
-    if settings["log_save"]:
-        logfile = "./log/" + datetime.now().strftime("%Y.%m.%d.txt")
-        if not path.exists("./log/"):
-            mkdir("./log/")
-        with open(logfile, "a", encoding=charset) as file:
-            file.write(timestamp + string + "\n")
-    # Show Logs
-    if settings["log_show"]:
-        print(timestamp + string)
-
-
-def move_upks(mode, category):
-    if mode == "remove":
-        src, dst = settings["game_location"], settings["backup_location"]
-    elif mode == "restore":
-        src, dst = settings["backup_location"], settings["game_location"]
-    else:
-        print("ERROR: move_upks() can't be called without defining a mode!")
-        return
-    if category == "all":
-        move_upks(mode, "animations")
-        move_upks(mode, "effects")
-    else:
-        # Generate list of files from json
-        upk_list = []
-        with open("./data/" + category + ".json", "r", encoding=charset) as upks:
-            values = upks.read()
-        upk_values = json.loads(values)
-        for player_class in upk_values.keys():
-            if player_class not in settings["remove_" + category]:
-                continue
-            for value in upk_values[player_class]:
-                upk_list.append(value)
-        move_files(upk_list, src, dst)
 
 
 def move_files(files, src, dst):
@@ -236,66 +116,37 @@ def move_files(files, src, dst):
         print("File not found errors: " + str(errors_path))
 
 
+def move_upks(mode, category):
+    if mode == "remove":
+        src, dst = settings["game_location"], settings["backup_location"]
+    elif mode == "restore":
+        src, dst = settings["backup_location"], settings["game_location"]
+    else:
+        print("ERROR: move_upks() can't be called without defining a mode!")
+        return
+    if category == "all":
+        move_upks(mode, "animations")
+        move_upks(mode, "effects")
+    else:
+        # Generate list of files from json
+        upk_list = []
+        with open("./data/" + category + ".json", "r", encoding=charset) as upks:
+            values = upks.read()
+        upk_values = json.loads(values)
+        for player_class in upk_values.keys():
+            if player_class not in settings["remove_" + category]:
+                continue
+            for value in upk_values[player_class]:
+                upk_list.append(value)
+        move_files(upk_list, src, dst)
+
+
 def restore_all():
     upk_list = listdir(settings["backup_location"])
     if len(upk_list) == 0:
         print("No files to restore!")
     else:
         move_files(upk_list, settings["backup_location"], settings["game_location"])
-
-
-def update(repo="gregor-dietrich/bns-upk-manager", current_version=version):
-    print("Checking for updates...")
-    try:
-        response = get("https://github.com/" + repo + "/releases/latest")
-    except ConnectionError:
-        print("Connection failed! Is your internet connection working?")
-        return
-    try:
-        doc = BeautifulSoup(response.text, "html.parser")
-        current_version = "".join(current_version.split("."))
-        latest_version = "".join(doc.select_one("div.label-latest div ul li a")["title"].split("v")[1].split("."))
-        file_url = "https://github.com" + doc.select_one("details div.Box div div.Box-body a")["href"]
-        file_name = file_url.split("/")[-1]
-        if float(latest_version) > float(current_version):
-            decision = ""
-            while decision not in ["y", "n"]:
-                decision = input("New version found! Download now (y/n)? ")
-                if decision == "y":
-                    break
-                elif decision == "n":
-                    return
-            if not path.exists("./" + file_name):
-                file_binary = get(file_url)
-                with open("./" + file_name, "wb") as file:
-                    file.write(file_binary.content)
-            if file_name.endswith(".zip"):
-                from zipfile import ZipFile
-            elif file_name.endswith(".7z"):
-                from py7zr import SevenZipFile as ZipFile
-            else:
-                print("Invalid archive format!")
-                return
-            with ZipFile("./" + file_name, "r") as archive:
-                archive.extractall("./download")
-            with open("./update.bat", "w") as batch:
-                batch.write("@echo off\n")
-                patch_files = listdir("./download")
-                for patch_file in patch_files:
-                    if patch_file.endswith(".exe"):
-                        batch.write("taskkill /f /im " + patch_file + "\n")
-                batch.write("@ping -n 3 localhost> nul\n" +
-                            "robocopy download\\ .\\ *.* /move /s /is /it\n" +
-                            "rmdir /s /q download\n" +
-                            "del " + file_name + "\n" +
-                            "del update.bat\n" +
-                            "tk_upk_manager.exe")
-            system('cmd /c "update.bat"')
-            exit()
-        else:
-            print("Already up to date!")
-    except (TypeError, ValueError, IndexError):
-        print("Something went wrong! Please try again later.")
 
 
 # Check for Updates
