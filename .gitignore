@@ -2,6 +2,7 @@
 
 .idea
 __pycache__
+profiles
 backup/*.upk
 log/*.txt
 *.code-workspace

@@ -3,15 +3,17 @@ from datetime import datetime
 from os import listdir, mkdir, path, remove
 from shutil import copyfile
 
-from init import charset, default_values, init, settings_location
+from init import charset, default_values, find_game_path, init, settings_location
 from update import update
-from tkutil import checksum, find_game_path
+from tkutil import checksum, settings_load
 
 
 def log(string):
     if settings["log_save"] or settings["log_show"]:
         # Generate Timestamp
         timestamp = "(" + datetime.now().strftime("%H:%M:%S") + ") "
+    else:
+        return
     # Save Logs
     if settings["log_save"]:
         logfile = "./log/" + datetime.now().strftime("%Y.%m.%d.txt")
@@ -103,35 +105,49 @@ update()
 # Initialize Settings
 settings = init()
 
+# Read profiles folder
+profiles = listdir("./profiles/")
+for profile in profiles:
+    if not profile.endswith(".json"):
+        profiles.remove(profile)
+
 # Do something!
 while True:
+    print("(0) Exit UPK Manager")
     print("(1) Apply current profile (settings.json)")
     print("(2) Restore EVERYTHING from backup folder")
     print("(3) Detect Blade & Soul folder")
-    print("(0) Exit UPK Manager")
+
+    offset = 4
+    for profile_number in range(len(profiles)):
+        print("(%i) Load Profile '%s'" % ((profile_number + offset), profiles[profile_number]))
 
     try:
         command = int(input("What would you like to do: "))
         if command == 0:
             print("Goodbye, Cricket!")
             break
-        elif command in range(4):
+        elif command in range(offset):
             if command == 1:
                 restore_all()
                 move_upks("remove", "all")
             elif command == 2:
                 restore_all()
             elif command == 3:
-                game_folder = find_game_path(default_values["game_location"])
-                if game_folder is None:
-                    print("Couldn't detect game folder.")
-                else:
+                game_folder = find_game_path()
+                if game_folder is not None:
                     print("Success! Saving path to settings.json...")
                     settings["game_location"] = game_folder
                     with open(settings_location, "w", encoding=charset) as settings_file:
                         json.dump(settings, settings_file, sort_keys=True, indent=4)
                     settings["game_location"] += "contents/bns/CookedPC/"
+                else:
+                    print("Couldn't detect game folder.")
+        elif command in range(offset, (len(profiles) + offset)):
+            settings = settings_load(("./profiles/" + profiles[(command - offset)]), default_values, charset)
+            with open(settings_location, "w", encoding=charset) as settings_file:
+                json.dump(settings, settings_file, sort_keys=True, indent=4)
         else:
             raise ValueError
     except ValueError:
-        print("Invalid input: Enter an integer between 0 and 3!")
+        print("Invalid input: Enter an integer between 0 and %i!" % (len(profiles) + (offset - 1)))
