@@ -2,10 +2,11 @@ import json
 from os import mkdir, path, remove
 from sys import exit
 
+from tkutil import find_game_path
 
 charset = "utf-8"
 settings_location = "./settings.json"
-version = "0.4.6"
+version = "0.4.7"
 
 default_values = {
     "backup_location": "./backup/",
@@ -56,7 +57,7 @@ def init():
     if not path.exists(settings_location):
         print("File settings.json not found! Generating default...\n"
               + "Trying to detect game folder...")
-        game_path = find_game_path()
+        game_path = find_game_path(default_values["game_location"])
         if game_path is not None and path.exists(game_path):
             print("Success! Saving path to settings.json...")
             default_values["game_location"] = game_path

@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from os import system
+from os import path, listdir, system
 from requests import get
 
 from init import version

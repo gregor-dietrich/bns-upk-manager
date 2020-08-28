@@ -1,33 +1,11 @@
 import json
 from datetime import datetime
-from os import listdir, path, remove
+from os import listdir, mkdir, path, remove
 from shutil import copyfile
-from winreg import ConnectRegistry, EnumValue, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, OpenKey
 
 from init import charset, default_values, init, settings_location
 from update import update
-from tkutil import checksum
-
-
-def find_game_path():
-    # Try default install dir
-    default = default_values["game_location"]
-    if path.exists(default):
-        return default
-    # Search HKCU
-    result = search_reg("HKCU")
-    # Search HKLM
-    if result is None:
-        result = search_reg("HKLM")
-    # Fix Backslashes
-    try:
-        if "\\" in result:
-            result = result.split("\\")
-            result = "/".join(result)
-        if path.exists(result):
-            return result
-    except TypeError:
-        pass
+from tkutil import checksum, find_game_path
 
 
 def log(string):
@@ -44,36 +22,6 @@ def log(string):
     # Show Logs
     if settings["log_show"]:
         print(timestamp + string)
-
-
-def search_reg(scope):
-    if scope == "HKCU":
-        a_reg = ConnectRegistry(None, HKEY_CURRENT_USER)
-        a_key = "Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\Shell\\MuiCache\\"
-    elif scope == "HKLM":
-        a_reg = ConnectRegistry(None, HKEY_LOCAL_MACHINE)
-        a_key = "SOFTWARE\\WOW6432Node\\NCWest\\BnS\\"
-    else:
-        return
-    count = 0
-    try:
-        key = OpenKey(a_reg, a_key)
-        while True:
-            name, value, value_type = EnumValue(key, count)
-            if scope == "HKCU":
-                if value == "Blade & Soul by bloodlust(x86)":
-                    game_path = name.split(".")[0].split("\\")
-                    game_path.pop()
-                    game_path.pop()
-                    print("Game path found in HKCU!")
-                    return "/".join(game_path) + "/"
-            elif scope == "HKLM":
-                if name == "BaseDir":
-                    print("Game path found in HKLM!")
-                    return value
-            count += 1
-    except (WindowsError, OSError, FileNotFoundError):
-        pass
 
 
 def move_files(files, src, dst):
@@ -174,7 +122,7 @@ while True:
             elif command == 2:
                 restore_all()
             elif command == 3:
-                game_folder = find_game_path()
+                game_folder = find_game_path(default_values["game_location"])
                 if game_folder is None:
                     print("Couldn't detect game folder.")
                 else:
