@@ -1,6 +1,7 @@
 from tkinter import ttk
 from ttkthemes import ThemedTk
 from os import path
+from sys import exit
 
 from init import default_values, version
 
@@ -36,6 +37,12 @@ class UPKManager(ThemedTk):
         # Show default frame
         self.show_frame(MainFrame)
 
+    def __del__(self):
+        try:
+            exit()
+        except SystemExit:
+            pass
+
     def show_frame(self, c):
         this = self.frames[c]
         this.tkraise()
@@ -67,11 +74,21 @@ class MainFrame(ttk.Frame):
         box_eff_other.grid(row=6, column=1, sticky="w")
         box_eff_other.state(["selected"])
         # Setup Buttons
-        ttk.Button(self, text="Apply", command=lambda: c.show_frame(MainFrame)).grid(row=7, column=0, sticky="w")
-        ttk.Button(self, text="Restore", command=lambda: c.show_frame(MainFrame)).grid(row=7, column=1, sticky="w")
-        ttk.Button(self, text="Settings", command=lambda: c.show_frame(SettingsFrame)).grid(row=7, column=2, sticky="w")
-        ttk.Button(self, text="Load...", command=lambda: c.show_frame(MainFrame)).grid(row=7, column=4, sticky="w")
-        ttk.Button(self, text="Save...", command=lambda: c.show_frame(MainFrame)).grid(row=7, column=5, sticky="w")
+        apply_button = ttk.Button(self, text="Apply",
+                                  command=lambda: c.show_frame(MainFrame))
+        apply_button.grid(row=7, column=0, sticky="w")
+        restore_button = ttk.Button(self, text="Restore",
+                                    command=lambda: c.show_frame(MainFrame))
+        restore_button.grid(row=7, column=1, sticky="w")
+        settings_button = ttk.Button(self, text="Settings",
+                                     command=lambda: c.show_frame(SettingsFrame))
+        settings_button.grid(row=7, column=2, sticky="w")
+        load_button = ttk.Button(self, text="Load...",
+                                 command=lambda: c.show_frame(MainFrame))
+        load_button.grid(row=7, column=4, sticky="w")
+        save_button = ttk.Button(self, text="Save...",
+                                 command=lambda: c.show_frame(MainFrame))
+        save_button.grid(row=7, column=5, sticky="w")
 
 
 class SettingsFrame(ttk.Frame):
@@ -79,4 +96,6 @@ class SettingsFrame(ttk.Frame):
         ttk.Frame.__init__(self, p)
         self.grid(row=0, column=0, sticky="w", padx=5, pady=5)
         # Setup Buttons
-        ttk.Button(self, text="Back", command=lambda: c.show_frame(MainFrame)).grid(row=0, column=0, sticky="w")
+        back_button = ttk.Button(self, text="Back",
+                                 command=lambda: c.show_frame(MainFrame))
+        back_button.grid(row=0, column=0, sticky="w")

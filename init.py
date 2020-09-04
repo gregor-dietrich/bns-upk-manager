@@ -104,7 +104,10 @@ def init():
     # Check if required data is present
     if not path.exists("./data/animations.json") or not path.exists("./data/effects.json"):
         input("CRITICAL ERROR: Required data is missing! Exiting...")
-        exit()
+        try:
+            exit()
+        except SystemExit:
+            pass
     # Generate default settings.json if there is none
     if not path.exists(settings_location):
         print("File settings.json not found! Generating default...\n"
@@ -145,4 +148,7 @@ def init():
             return init()
         else:
             print("Exiting...")
-            exit()
+            try:
+                exit()
+            except SystemExit:
+                pass
