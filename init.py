@@ -5,11 +5,13 @@ from winreg import ConnectRegistry, EnumValue, HKEY_CURRENT_USER, HKEY_LOCAL_MAC
 
 charset = "utf-8"
 settings_location = "./settings.json"
-version = "0.5.1"
+version = "0.6.0"
 
 default_values = {
     "backup_location": "./backup/",
+    "dark_mode": 0,
     "game_location": "C:/Program Files (x86)/NCSOFT/BnS/",
+    "gui_mode": 1,
     "log_save": 0,
     "log_show": 1,
     "remove_animations":
