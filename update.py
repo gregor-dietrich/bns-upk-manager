@@ -3,7 +3,7 @@ from os import path, listdir, system
 from bs4 import BeautifulSoup
 from requests import get
 
-from init import version
+from env import version
 
 
 def update(repo="gregor-dietrich/bns-upk-manager", current_version=version):

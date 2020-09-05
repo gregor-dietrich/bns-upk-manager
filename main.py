@@ -5,8 +5,8 @@ from os import listdir, mkdir, path, remove
 from shutil import copyfile
 from tkinter import messagebox
 
-from gui import UPKManager
-from init import charset, init
+from env import *
+from gui import find_game_path, UPKManager
 from update import update
 
 
@@ -18,12 +18,67 @@ def checksum(file_name):
     return hash_obj.hexdigest()
 
 
+def init(silent=False):
+    if not silent:
+        print("Initializing UPK Manager for Blade & Soul by Takku#0822 v" + version + "...")
+    # Check if required data is present
+    if not path.exists("./data/animations.json") or not path.exists("./data/effects.json"):
+        if not silent:
+            messagebox.showerror("CRITICAL ERROR", "Required data is missing! Exiting...")
+            return
+        try:
+            exit()
+        except SystemExit:
+            pass
+    # Generate default settings.json if there is none
+    if not path.exists(settings_location):
+        print("File settings.json not found! Generating default...\n"
+              + "Trying to detect game folder...")
+        game_path = find_game_path()
+        if game_path is not None and path.exists(game_path):
+            print("Success! Saving path to settings.json...")
+            default_values["game_location"] = game_path
+        else:
+            print("Couldn't find game location. Please adjust manually in settings.json!")
+        with open(settings_location, "w", encoding=charset) as settings_file:
+            json.dump(default_values, settings_file, sort_keys=True, indent=4)
+        print("Successfully generated. Please adjust your settings.json!")
+        input("Save your changes to settings.json and press Enter to continue...")
+    # Load settings.json as dictionary
+    if not silent:
+        print("Loading settings from settings.json...")
+    with open(settings_location, "r", encoding=charset) as file:
+        values = file.read()
+    try:
+        settings_values = json.loads(values)
+        for k in default_values.keys():
+            if k not in settings_values.keys():
+                settings_values[k] = default_values[k]
+        # Create backup & profiles folders if needed
+        for folder in [settings_values["backup_location"], "./profiles/"]:
+            if not path.exists(folder):
+                mkdir(folder)
+        # Dumping settings_values to settings.json
+        with open(settings_location, "w", encoding=charset) as settings_file:
+            json.dump(settings_values, settings_file, sort_keys=True, indent=4)
+        settings_values["game_location"] += "contents/bns/CookedPC/"
+        if not silent:
+            print("Successfully initialized. Welcome, Cricket!")
+        return settings_values
+    except (json.JSONDecodeError, TypeError, AttributeError):
+        if messagebox.askquestion("Error",
+                                  "Invalid JSON syntax detected!\n" +
+                                  "Delete settings.json and generate default? ") == "yes":
+            remove(settings_location)
+            return init()
+        else:
+            print("Exiting...")
+            exit()
+
+
 def log(string):
-    if settings["log_save"] or settings["log_show"]:
-        # Generate Timestamp
-        timestamp = "(" + datetime.now().strftime("%H:%M:%S") + ") "
-    else:
-        return
+    # Generate Timestamp
+    timestamp = "(" + datetime.now().strftime("%H:%M:%S") + ") "
     # Save Logs
     if settings["log_save"]:
         logfile = "./log/" + datetime.now().strftime("%Y.%m.%d.txt")
@@ -32,8 +87,7 @@ def log(string):
         with open(logfile, "a", encoding=charset) as file:
             file.write(timestamp + string + "\n")
     # Show Logs
-    if settings["log_show"]:
-        print(timestamp + string)
+    print(timestamp + string)
 
 
 def move_files(files, src, dst):
@@ -81,18 +135,14 @@ def move_upks(mode, category):
     elif mode == "restore":
         src, dst = settings["backup_location"], settings["game_location"]
     else:
-        if settings["gui_mode"]:
-            messagebox.showwarning("Error", "move_upks() can't be called without defining a mode!")
-        else:
-            print("Error: move_upks() can't be called without defining a mode!")
+        messagebox.showwarning("Error", "move_upks() can't be called without defining a mode!")
+        log("Error: move_upks() can't be called without defining a mode!")
         return
     if category == "all":
         move_upks(mode, "animations")
         move_upks(mode, "effects")
-        if settings["gui_mode"]:
-            messagebox.showinfo("Removal Success", "All file operations finished.")
-        else:
-            print("... all file operations finished!")
+        messagebox.showinfo("Removal Success", "All file operations finished.")
+        log("... all file operations finished!")
     else:
         # Generate list of files from json
         upk_list = []
@@ -110,18 +160,13 @@ def move_upks(mode, category):
 def restore_all(silent=False):
     upk_list = listdir(settings["backup_location"])
     if len(upk_list) == 0:
-        if settings["gui_mode"]:
-            if not silent:
-                messagebox.showwarning("Warning", "No files to restore!")
-        else:
-            if not silent:
-                print("No files to restore!")
+        if not silent:
+            messagebox.showwarning("Warning", "No files to restore!")
+            log("No files to restore!")
     else:
         move_files(upk_list, settings["backup_location"], settings["game_location"])
-        if settings["gui_mode"]:
-            if not silent:
-                messagebox.showinfo("Restore Success", "All file operations finished.")
-        else:
+        if not silent:
+            messagebox.showinfo("Restore Success", "All file operations finished.")
             print("... all file operations finished!")
 
 
@@ -135,5 +180,5 @@ if settings["dark_mode"]:
     theme = "equilux"
 else:
     theme = "arc"
-app = UPKManager(move_files, restore_all, theme=theme)
+app = UPKManager(move_files, restore_all, settings, theme=theme)
 app.mainloop()

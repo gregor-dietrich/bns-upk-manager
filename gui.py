@@ -2,54 +2,10 @@ import json
 from os import path
 from sys import exit
 from tkinter import filedialog, messagebox, IntVar, ttk, END
+from ttkthemes import ThemedTk
 from winreg import ConnectRegistry, EnumValue, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, OpenKey
 
-from ttkthemes import ThemedTk
-
-from init import init
-
-charset = "utf-8"
-settings_location = "./settings.json"
-version = "1.0.0"
-default_values = {
-    "backup_location": "./backup/",
-    "dark_mode": 0,
-    "game_location": "C:/Program Files (x86)/NCSOFT/BnS/",
-    "gui_mode": 1,
-    "log_save": 0,
-    "log_show": 1,
-    "remove_animations":
-        [
-            "Blade Master",
-            "Kung-Fu Master",
-            "Force Master",
-            "Destroyer",
-            "Gunslinger",
-            "Assassin",
-            "Summoner",
-            "Blade Dancer",
-            "Warlock",
-            "Soul Fighter",
-            "Warden",
-            "Archer"
-        ],
-    "remove_effects":
-        [
-            "Blade Master",
-            "Kung-Fu Master",
-            "Force Master",
-            "Destroyer",
-            "Gunslinger",
-            "Assassin",
-            "Summoner",
-            "Blade Dancer",
-            "Warlock",
-            "Soul Fighter",
-            "Warden",
-            "Archer",
-            "other"
-        ]
-}
+from env import *
 
 
 def find_game_path():
@@ -104,9 +60,9 @@ def search_reg(scope):
 
 
 class UPKManager(ThemedTk):
-    def __init__(self, move_files, restore_all, *args, **kwargs):
+    def __init__(self, move_files, restore_all, settings, *args, **kwargs):
         ThemedTk.__init__(self, *args, **kwargs)
-        self.settings = init(silent=True)
+        self.settings = settings
         self.move_files = move_files
         self.restore_all = restore_all
         # Setup Window
@@ -152,24 +108,18 @@ class UPKManager(ThemedTk):
         this.tkraise()
 
     def move_upks(self, mode, category):
-        print(self.settings)
         if mode == "remove":
             src, dst = self.settings["game_location"], self.settings["backup_location"]
         elif mode == "restore":
             src, dst = self.settings["backup_location"], self.settings["game_location"]
         else:
-            if self.settings["gui_mode"]:
-                messagebox.showwarning("Error", "move_upks() can't be called without defining a mode!")
-            else:
-                print("Error: move_upks() can't be called without defining a mode!")
+            messagebox.showwarning("Error", "move_upks() can't be called without defining a mode!")
             return
         if category == "all":
             self.move_upks(mode, "animations")
             self.move_upks(mode, "effects")
-            if self.settings["gui_mode"]:
-                messagebox.showinfo("Removal Success", "All file operations finished.")
-            else:
-                print("... all file operations finished!")
+            messagebox.showinfo("Removal Success", "All file operations finished.")
+            print("... all file operations finished!")
         else:
             # Generate list of files from json
             upk_list = []
@@ -290,26 +240,14 @@ class SettingsFrame(ttk.Frame):
         self.game_location_input = ttk.Entry(self)
         self.game_location_input.insert(0, c.settings["game_location"][:-22])
         self.game_location_input.grid(row=1, column=1, sticky="w", padx=10, pady=2, ipady=2)
-        self.log_options_label = ttk.Label(self, text="Log Options", font=c.font_style)
-        self.log_options_label.grid(row=2, column=0, sticky="w")
         self.log_save_var = IntVar()
         self.log_save_var.set(c.settings["log_save"])
         self.log_save_box = ttk.Checkbutton(self, text="Save Log", variable=self.log_save_var)
         self.log_save_box.grid(row=2, column=1, sticky="w", padx=6)
-        self.log_show_var = IntVar()
-        self.log_show_var.set(c.settings["log_show"])
-        self.log_show_box = ttk.Checkbutton(self, text="Show Log", variable=self.log_show_var)
-        self.log_show_box.grid(row=3, column=1, sticky="w", padx=6)
-        self.gui_options_label = ttk.Label(self, text="GUI Options", font=c.font_style)
-        self.gui_options_label.grid(row=4, column=0, sticky="w")
-        self.gui_mode_var = IntVar()
-        self.gui_mode_var.set(c.settings["gui_mode"])
-        self.gui_mode_box = ttk.Checkbutton(self, text="Enable GUI", variable=self.gui_mode_var)
-        self.gui_mode_box.grid(row=4, column=1, sticky="w", padx=6)
         self.dark_mode_var = IntVar()
         self.dark_mode_var.set(c.settings["dark_mode"])
         self.dark_mode_box = ttk.Checkbutton(self, text="Dark Mode", variable=self.dark_mode_var)
-        self.dark_mode_box.grid(row=5, column=1, sticky="w", padx=6)
+        self.dark_mode_box.grid(row=3, column=1, sticky="w", padx=6)
         # Setup buttons
         self.default_button = ttk.Button(self, text="Default",
                                          command=self.set_default)
@@ -319,7 +257,7 @@ class SettingsFrame(ttk.Frame):
         self.detect_game_button.grid(row=1, column=2, sticky="w", padx=10, pady=5)
         self.back_button = ttk.Button(self, text="Back",
                                       command=lambda: c.show_frame(MainFrame))
-        self.back_button.grid(row=6, column=1, sticky="w", padx=9, pady=5)
+        self.back_button.grid(row=4, column=1, sticky="w", padx=9, pady=5)
 
     def detect_game(self, c):
         game_folder = find_game_path()
