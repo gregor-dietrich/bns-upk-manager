@@ -1,9 +1,9 @@
-from tkinter import ttk
+from tkinter import ttk, END
 from ttkthemes import ThemedTk
 from os import path
 from sys import exit
 
-from init import default_values, version
+from init import default_values, find_game_path, version
 
 
 class UPKManager(ThemedTk):
@@ -73,7 +73,7 @@ class MainFrame(ttk.Frame):
         box_eff_other = ttk.Checkbutton(self, text="Effects")
         box_eff_other.grid(row=6, column=1, sticky="w")
         box_eff_other.state(["selected"])
-        # Setup Buttons
+        # Setup buttons
         apply_button = ttk.Button(self, text="Apply",
                                   command=lambda: c.show_frame(MainFrame))
         apply_button.grid(row=7, column=0, sticky="w")
@@ -95,7 +95,44 @@ class SettingsFrame(ttk.Frame):
     def __init__(self, p, c):
         ttk.Frame.__init__(self, p)
         self.grid(row=0, column=0, sticky="w", padx=5, pady=5)
-        # Setup Buttons
-        back_button = ttk.Button(self, text="Back",
-                                 command=lambda: c.show_frame(MainFrame))
-        back_button.grid(row=0, column=0, sticky="w")
+        # Setup labels & checkboxes
+        self.backup_location_label = ttk.Label(self, text="Backup Location", font=c.font_style)
+        self.backup_location_label.grid(row=0, column=0, sticky="w")
+        self.backup_location_input = ttk.Entry(self)
+        self.backup_location_input.grid(row=0, column=1, sticky="w", padx=10, pady=5)
+        self.game_location_label = ttk.Label(self, text="Game Location", font=c.font_style)
+        self.game_location_label.grid(row=1, column=0, sticky="w")
+        self.game_location_input = ttk.Entry(self)
+        self.game_location_input.grid(row=1, column=1, sticky="w", padx=10, pady=5)
+        self.log_options_label = ttk.Label(self, text="Log Options", font=c.font_style)
+        self.log_options_label.grid(row=3, column=0, sticky="w")
+        self.log_save_box = ttk.Checkbutton(self, text="Save Log")
+        self.log_save_box.grid(row=3, column=1, sticky="w")
+        self.log_show_box = ttk.Checkbutton(self, text="Show Log")
+        self.log_show_box.grid(row=4, column=1, sticky="w")
+        self.gui_options_label = ttk.Label(self, text="GUI Options", font=c.font_style)
+        self.gui_options_label.grid(row=5, column=0, sticky="w")
+        self.gui_mode_box = ttk.Checkbutton(self, text="Enable GUI")
+        self.gui_mode_box.grid(row=5, column=1, sticky="w")
+        self.dark_mode_box = ttk.Checkbutton(self, text="Dark Mode")
+        self.dark_mode_box.grid(row=6, column=1, sticky="w")
+        # Setup buttons
+        self.detect_game_button = ttk.Button(self, text="Detect",
+                                             command=self.detect_game)
+        self.detect_game_button.grid(row=2, column=1, sticky="w", padx=10, pady=5)
+        self.back_button = ttk.Button(self, text="Back",
+                                      command=lambda: c.show_frame(MainFrame))
+        self.back_button.grid(row=7, column=1, sticky="w")
+
+    def detect_game(self):
+        game_folder = find_game_path()
+        if game_folder is not None:
+            print("Success! Saving path to settings.json...")
+            self.game_location_input.delete(0, END)
+            self.game_location_input.insert(0, game_folder)
+            # settings["game_location"] = game_folder
+            # with open(settings_location, "w", encoding=charset) as settings_file:
+            #     json.dump(settings, settings_file, sort_keys=True, indent=4)
+            # main.settings["game_location"] += "contents/bns/CookedPC/"
+        else:
+            print("Couldn't detect game folder.")
