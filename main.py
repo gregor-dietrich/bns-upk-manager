@@ -1,13 +1,21 @@
 import json
 from datetime import datetime
+from hashlib import sha1
 from os import listdir, mkdir, path, remove
 from shutil import copyfile
 from tkinter import messagebox
 
 from gui import UPKManager
-from init import charset, default_values, find_game_path, init, settings_location
-from tkutil import checksum, settings_load
+from init import charset, init
 from update import update
+
+
+def checksum(file_name):
+    hash_obj = sha1()
+    with open(file_name, "rb") as file:
+        for chunk in iter(lambda: file.read(4096), b""):
+            hash_obj.update(chunk)
+    return hash_obj.hexdigest()
 
 
 def log(string):
@@ -123,55 +131,9 @@ update()
 settings = init()
 
 # Do something!
-if settings["gui_mode"]:
-    if settings["dark_mode"]:
-        theme = "equilux"
-    else:
-        theme = "arc"
-    app = UPKManager(move_files, restore_all, theme=theme)
-    app.mainloop()
+if settings["dark_mode"]:
+    theme = "equilux"
 else:
-    # Read profiles folder
-    profiles = listdir("./profiles/")
-    for profile in profiles:
-        if not profile.endswith(".json"):
-            profiles.remove(profile)
-    while True:
-        print("(0) Exit UPK Manager")
-        print("(1) Apply current profile (settings.json)")
-        print("(2) Restore EVERYTHING from backup folder")
-        print("(3) Detect Blade & Soul folder")
-
-        offset = 4
-        for profile_number in range(len(profiles)):
-            print("(%i) Load Profile '%s'" % ((profile_number + offset), profiles[profile_number]))
-
-        try:
-            command = int(input("What would you like to do: "))
-            if command == 0:
-                print("Goodbye, Cricket!")
-                break
-            elif command in range(offset):
-                if command == 1:
-                    restore_all(silent=True)
-                    move_upks("remove", "all")
-                elif command == 2:
-                    restore_all()
-                elif command == 3:
-                    game_folder = find_game_path()
-                    if game_folder is not None:
-                        print("Success! Saving path to settings.json...")
-                        settings["game_location"] = game_folder
-                        with open(settings_location, "w", encoding=charset) as settings_file:
-                            json.dump(settings, settings_file, sort_keys=True, indent=4)
-                        settings["game_location"] += "contents/bns/CookedPC/"
-                    else:
-                        print("Couldn't detect game folder.")
-            elif command in range(offset, (len(profiles) + offset)):
-                settings = settings_load(("./profiles/" + profiles[(command - offset)]), default_values, charset)
-                with open(settings_location, "w", encoding=charset) as settings_file:
-                    json.dump(settings, settings_file, sort_keys=True, indent=4)
-            else:
-                raise ValueError
-        except ValueError:
-            print("Invalid input: Enter an integer between 0 and %i!" % (len(profiles) + (offset - 1)))
+    theme = "arc"
+app = UPKManager(move_files, restore_all, theme=theme)
+app.mainloop()

@@ -6,7 +6,7 @@ from winreg import ConnectRegistry, EnumValue, HKEY_CURRENT_USER, HKEY_LOCAL_MAC
 
 charset = "utf-8"
 settings_location = "./settings.json"
-version = "0.7.0"
+version = "0.6.0"
 
 default_values = {
     "backup_location": "./backup/",

@@ -1,8 +1,106 @@
-from tkinter import filedialog, IntVar, ttk, END
+import json
+from os import path
+from sys import exit
+from tkinter import filedialog, messagebox, IntVar, ttk, END
+from winreg import ConnectRegistry, EnumValue, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, OpenKey
 
 from ttkthemes import ThemedTk
 
-from init import *
+from init import init
+
+charset = "utf-8"
+settings_location = "./settings.json"
+version = "1.0.0"
+default_values = {
+    "backup_location": "./backup/",
+    "dark_mode": 0,
+    "game_location": "C:/Program Files (x86)/NCSOFT/BnS/",
+    "gui_mode": 1,
+    "log_save": 0,
+    "log_show": 1,
+    "remove_animations":
+        [
+            "Blade Master",
+            "Kung-Fu Master",
+            "Force Master",
+            "Destroyer",
+            "Gunslinger",
+            "Assassin",
+            "Summoner",
+            "Blade Dancer",
+            "Warlock",
+            "Soul Fighter",
+            "Warden",
+            "Archer"
+        ],
+    "remove_effects":
+        [
+            "Blade Master",
+            "Kung-Fu Master",
+            "Force Master",
+            "Destroyer",
+            "Gunslinger",
+            "Assassin",
+            "Summoner",
+            "Blade Dancer",
+            "Warlock",
+            "Soul Fighter",
+            "Warden",
+            "Archer",
+            "other"
+        ]
+}
+
+
+def find_game_path():
+    default = default_values["game_location"]
+    # Try default install dir
+    if path.exists(default):
+        return default
+    # Search HKCU
+    result = search_reg("HKCU")
+    # Search HKLM
+    if result is None:
+        result = search_reg("HKLM")
+    # Fix Backslashes
+    try:
+        if "\\" in result:
+            result = result.split("\\")
+            result = "/".join(result)
+        if path.exists(result):
+            return result
+    except TypeError:
+        pass
+
+
+def search_reg(scope):
+    if scope == "HKCU":
+        a_reg = ConnectRegistry(None, HKEY_CURRENT_USER)
+        a_key = "Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\Shell\\MuiCache\\"
+    elif scope == "HKLM":
+        a_reg = ConnectRegistry(None, HKEY_LOCAL_MACHINE)
+        a_key = "SOFTWARE\\WOW6432Node\\NCWest\\BnS\\"
+    else:
+        return
+    count = 0
+    try:
+        key = OpenKey(a_reg, a_key)
+        while True:
+            name, value, value_type = EnumValue(key, count)
+            if scope == "HKCU":
+                if value == "Blade & Soul by bloodlust(x86)":
+                    game_path = name.split(".")[0].split("\\")
+                    game_path.pop()
+                    game_path.pop()
+                    # print("Game path found in HKCU!")
+                    return "/".join(game_path) + "/"
+            elif scope == "HKLM":
+                if name == "BaseDir":
+                    # print("Game path found in HKLM!")
+                    return value
+            count += 1
+    except (WindowsError, OSError, FileNotFoundError):
+        pass
 
 
 class UPKManager(ThemedTk):
