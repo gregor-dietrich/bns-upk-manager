@@ -1,8 +1,20 @@
-from tkinter import ttk, END
+from tkinter import filedialog, IntVar, ttk, END
 
 from ttkthemes import ThemedTk
 
 from init import *
+
+
+def load_pro_file():
+    file_name = filedialog.askopenfile(initialdir="./profiles", title="Load Profile...",
+                                       filetypes=(("json files", "*.json"), ("all files", "*.*")))
+    return file_name
+
+
+def save_pro_file():
+    file_name = filedialog.asksaveasfilename(initialdir="./profiles", title="Save Profile...",
+                                             filetypes=(("json files", "*.json"), ("all files", "*.*")))
+    return file_name
 
 
 class UPKManager(ThemedTk):
@@ -60,6 +72,8 @@ class MainFrame(ttk.Frame):
         self.grid(row=0, column=0, sticky="w", padx=10, pady=10)
         # Setup labels & checkboxes for player classes
         label_count = 0
+        box_ani_vars = {}
+        box_eff_vars = {}
         for player_class in default_values["remove_animations"]:
             if player_class == "Archer":
                 player_class = "Zen " + player_class
@@ -69,10 +83,15 @@ class MainFrame(ttk.Frame):
                 col_ref = 3
             new_label = ttk.Label(self, text=player_class, font=c.font_style)
             if player_class == "Zen Archer":
-                # player_class = "Archer"
-                pass
-            box_ani = ttk.Checkbutton(self, text="Animations")
-            box_eff = ttk.Checkbutton(self, text="Effects")
+                player_class = "Archer"
+            box_ani_vars[player_class] = IntVar()
+            if player_class in c.settings["remove_animations"]:
+                box_ani_vars[player_class].set(1)
+            box_ani = ttk.Checkbutton(self, text="Animations", variable=box_ani_vars[player_class])
+            box_eff_vars[player_class] = IntVar()
+            if player_class in c.settings["remove_effects"]:
+                box_eff_vars[player_class].set(1)
+            box_eff = ttk.Checkbutton(self, text="Effects", variable=box_eff_vars[player_class])
             new_label.grid(row=row_ref, column=col_ref, sticky="w")
             box_ani.grid(row=row_ref, column=col_ref + 1, sticky="w")
             box_eff.grid(row=row_ref, column=col_ref + 2, sticky="w")
@@ -81,9 +100,11 @@ class MainFrame(ttk.Frame):
         # Setup label & checkbox for misc. effects
         new_label_other = ttk.Label(self, text="Other", font=c.font_style)
         new_label_other.grid(row=6, column=0, sticky="w")
-        box_eff_other = ttk.Checkbutton(self, text="Effects")
+        box_eff_other_var = IntVar()
+        if "other" in c.settings["remove_effects"]:
+            box_eff_other_var.set(1)
+        box_eff_other = ttk.Checkbutton(self, text="Effects", variable=box_eff_other_var)
         box_eff_other.grid(row=6, column=1, sticky="w")
-        # box_eff_other.state(["selected"])
         # Setup buttons
         apply_button = ttk.Button(self, text="Apply",
                                   command=c.apply)
@@ -95,10 +116,10 @@ class MainFrame(ttk.Frame):
                                      command=lambda: c.show_frame(SettingsFrame))
         settings_button.grid(row=7, column=2, sticky="w", pady=5)
         load_button = ttk.Button(self, text="Load...",
-                                 command=lambda: c.show_frame(MainFrame))
+                                 command=load_pro_file)
         load_button.grid(row=7, column=4, sticky="w", pady=5)
         save_button = ttk.Button(self, text="Save...",
-                                 command=lambda: c.show_frame(MainFrame))
+                                 command=save_pro_file)
         save_button.grid(row=7, column=5, sticky="w", pady=5)
 
 
@@ -119,15 +140,23 @@ class SettingsFrame(ttk.Frame):
         self.game_location_input.grid(row=1, column=1, sticky="w", padx=10, pady=2, ipady=2)
         self.log_options_label = ttk.Label(self, text="Log Options", font=c.font_style)
         self.log_options_label.grid(row=2, column=0, sticky="w")
-        self.log_save_box = ttk.Checkbutton(self, text="Save Log", variable=c.settings["log_save"])
+        self.log_save_var = IntVar()
+        self.log_save_var.set(c.settings["log_save"])
+        self.log_save_box = ttk.Checkbutton(self, text="Save Log", variable=self.log_save_var)
         self.log_save_box.grid(row=2, column=1, sticky="w", padx=6)
-        self.log_show_box = ttk.Checkbutton(self, text="Show Log", variable=c.settings["log_show"])
+        self.log_show_var = IntVar()
+        self.log_show_var.set(c.settings["log_show"])
+        self.log_show_box = ttk.Checkbutton(self, text="Show Log", variable=self.log_show_var)
         self.log_show_box.grid(row=3, column=1, sticky="w", padx=6)
         self.gui_options_label = ttk.Label(self, text="GUI Options", font=c.font_style)
         self.gui_options_label.grid(row=4, column=0, sticky="w")
-        self.gui_mode_box = ttk.Checkbutton(self, text="Enable GUI", variable=c.settings["gui_mode"])
+        self.gui_mode_var = IntVar()
+        self.gui_mode_var.set(c.settings["gui_mode"])
+        self.gui_mode_box = ttk.Checkbutton(self, text="Enable GUI", variable=self.gui_mode_var)
         self.gui_mode_box.grid(row=4, column=1, sticky="w", padx=6)
-        self.dark_mode_box = ttk.Checkbutton(self, text="Dark Mode", variable=c.settings["dark_mode"])
+        self.dark_mode_var = IntVar()
+        self.dark_mode_var.set(c.settings["dark_mode"])
+        self.dark_mode_box = ttk.Checkbutton(self, text="Dark Mode", variable=self.dark_mode_var)
         self.dark_mode_box.grid(row=5, column=1, sticky="w", padx=6)
         # Setup buttons
         self.default_button = ttk.Button(self, text="Default",
