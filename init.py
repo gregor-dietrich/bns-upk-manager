@@ -1,11 +1,12 @@
 import json
 from os import mkdir, path, remove
 from sys import exit
+from tkinter import messagebox
 from winreg import ConnectRegistry, EnumValue, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, OpenKey
 
 charset = "utf-8"
 settings_location = "./settings.json"
-version = "0.6.0"
+version = "0.7.0"
 
 default_values = {
     "backup_location": "./backup/",
@@ -104,7 +105,9 @@ def init(silent=False):
         print("Initializing UPK Manager for Blade & Soul by Takku#0822 v" + version + "...")
     # Check if required data is present
     if not path.exists("./data/animations.json") or not path.exists("./data/effects.json"):
-        input("CRITICAL ERROR: Required data is missing! Exiting...")
+        if not silent:
+            messagebox.showerror("CRITICAL ERROR", "Required data is missing! Exiting...")
+            return
         try:
             exit()
         except SystemExit:
@@ -145,13 +148,11 @@ def init(silent=False):
             print("Successfully initialized. Welcome, Cricket!")
         return settings_values
     except (json.JSONDecodeError, TypeError, AttributeError):
-        print("ERROR: Invalid JSON syntax detected!")
-        if input("Delete settings.json and generate default (y/n)? ") == "y":
+        if messagebox.askquestion("Error",
+                                  "Invalid JSON syntax detected!\n" +
+                                  "Delete settings.json and generate default? ") == "yes":
             remove(settings_location)
             return init()
         else:
             print("Exiting...")
-            try:
-                exit()
-            except SystemExit:
-                pass
+            exit()

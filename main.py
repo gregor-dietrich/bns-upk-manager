@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from os import listdir, mkdir, path, remove
 from shutil import copyfile
+from tkinter import messagebox
 
 from gui import UPKManager
 from init import charset, default_values, find_game_path, init, settings_location
@@ -48,17 +49,16 @@ def move_files(files, src, dst):
                     log("Checksum is valid! Removing " + file_path + "...")
                     remove(file_path)
                 else:
-                    log("ERROR: Checksum is invalid!")
+                    print("ERROR: Checksum is invalid!")
                     errors_checksum += 1
                     if path.exists(dst + file_name):
                         remove(dst + file_name)
             else:
-                log("ERROR: File not found! Skipping...")
+                print("ERROR: File not found! Skipping...")
                 errors_path += 1
         except PermissionError:
-            log("ERROR: Permission denied! Skipping...")
+            print("ERROR: Permission denied! Skipping...")
             errors_permission += 1
-    log("... all file operations finished!")
     if errors_checksum > 0:
         log("File checksum errors: " + str(errors_checksum) + "\n" + "Check your hard drive for errors!")
     if errors_permission > 0:
@@ -73,11 +73,18 @@ def move_upks(mode, category):
     elif mode == "restore":
         src, dst = settings["backup_location"], settings["game_location"]
     else:
-        print("ERROR: move_upks() can't be called without defining a mode!")
+        if settings["gui_mode"]:
+            messagebox.showwarning("Error", "move_upks() can't be called without defining a mode!")
+        else:
+            print("Error: move_upks() can't be called without defining a mode!")
         return
     if category == "all":
         move_upks(mode, "animations")
         move_upks(mode, "effects")
+        if settings["gui_mode"]:
+            messagebox.showinfo("Removal Success", "All file operations finished.")
+        else:
+            print("... all file operations finished!")
     else:
         # Generate list of files from json
         upk_list = []
@@ -92,20 +99,27 @@ def move_upks(mode, category):
         move_files(upk_list, src, dst)
 
 
-def restore_all():
+def restore_all(silent=False):
     upk_list = listdir(settings["backup_location"])
     if len(upk_list) == 0:
-        print("No files to restore!")
+        if settings["gui_mode"]:
+            if not silent:
+                messagebox.showwarning("Warning", "No files to restore!")
+        else:
+            if not silent:
+                print("No files to restore!")
     else:
         move_files(upk_list, settings["backup_location"], settings["game_location"])
+        if settings["gui_mode"]:
+            messagebox.showinfo("Restore Success", "All file operations finished.")
+        else:
+            print("... all file operations finished!")
 
 
 # Check for Updates
 update()
-
 # Initialize Settings
 settings = init()
-
 # Read profiles folder
 profiles = listdir("./profiles/")
 for profile in profiles:
@@ -114,9 +128,10 @@ for profile in profiles:
 
 # Do something!
 if settings["gui_mode"]:
-    theme = "arc"
     if settings["dark_mode"]:
         theme = "equilux"
+    else:
+        theme = "arc"
     app = UPKManager(move_upks, restore_all, theme=theme)
     app.mainloop()
 else:
@@ -137,14 +152,14 @@ else:
                 break
             elif command in range(offset):
                 if command == 1:
-                    restore_all()
+                    restore_all(silent=True)
                     move_upks("remove", "all")
                 elif command == 2:
                     restore_all()
                 elif command == 3:
                     game_folder = find_game_path()
                     if game_folder is not None:
-                        log("Success! Saving path to settings.json...")
+                        print("Success! Saving path to settings.json...")
                         settings["game_location"] = game_folder
                         with open(settings_location, "w", encoding=charset) as settings_file:
                             json.dump(settings, settings_file, sort_keys=True, indent=4)

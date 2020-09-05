@@ -46,7 +46,7 @@ class UPKManager(ThemedTk):
             pass
 
     def apply(self):
-        self.restore_all()
+        self.restore_all(silent=True)
         self.move_upks("remove", "all")
 
     def show_frame(self, c):
@@ -120,15 +120,15 @@ class SettingsFrame(ttk.Frame):
         self.log_options_label = ttk.Label(self, text="Log Options", font=c.font_style)
         self.log_options_label.grid(row=2, column=0, sticky="w")
         self.log_save_box = ttk.Checkbutton(self, text="Save Log", variable=c.settings["log_save"])
-        self.log_save_box.grid(row=2, column=1, sticky="w", padx=5)
+        self.log_save_box.grid(row=2, column=1, sticky="w", padx=6)
         self.log_show_box = ttk.Checkbutton(self, text="Show Log", variable=c.settings["log_show"])
-        self.log_show_box.grid(row=3, column=1, sticky="w", padx=5)
+        self.log_show_box.grid(row=3, column=1, sticky="w", padx=6)
         self.gui_options_label = ttk.Label(self, text="GUI Options", font=c.font_style)
         self.gui_options_label.grid(row=4, column=0, sticky="w")
         self.gui_mode_box = ttk.Checkbutton(self, text="Enable GUI", variable=c.settings["gui_mode"])
-        self.gui_mode_box.grid(row=4, column=1, sticky="w", padx=5)
+        self.gui_mode_box.grid(row=4, column=1, sticky="w", padx=6)
         self.dark_mode_box = ttk.Checkbutton(self, text="Dark Mode", variable=c.settings["dark_mode"])
-        self.dark_mode_box.grid(row=5, column=1, sticky="w", padx=5)
+        self.dark_mode_box.grid(row=5, column=1, sticky="w", padx=6)
         # Setup buttons
         self.default_button = ttk.Button(self, text="Default",
                                          command=self.set_default)
@@ -138,7 +138,7 @@ class SettingsFrame(ttk.Frame):
         self.detect_game_button.grid(row=1, column=2, sticky="w", padx=10, pady=5)
         self.back_button = ttk.Button(self, text="Back",
                                       command=lambda: c.show_frame(MainFrame))
-        self.back_button.grid(row=6, column=1, sticky="w", padx=5, pady=5)
+        self.back_button.grid(row=6, column=1, sticky="w", padx=9, pady=5)
 
     def detect_game(self, c):
         game_folder = find_game_path()
@@ -150,7 +150,7 @@ class SettingsFrame(ttk.Frame):
                 json.dump(c.settings, settings_file, sort_keys=True, indent=4)
             c.settings["game_location"] += "contents/bns/CookedPC/"
         else:
-            print("Couldn't detect game folder.")
+            messagebox.showerror("Error", "Couldn't detect game folder.")
 
     def set_default(self):
         self.backup_location_input.delete(0, END)
