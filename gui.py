@@ -6,10 +6,10 @@ from init import *
 
 
 class UPKManager(ThemedTk):
-    def __init__(self, move_upks, restore_all, *args, **kwargs):
+    def __init__(self, move_files, restore_all, *args, **kwargs):
         ThemedTk.__init__(self, *args, **kwargs)
         self.settings = init(silent=True)
-        self.move_upks = move_upks
+        self.move_files = move_files
         self.restore_all = restore_all
         # Setup Window
         self.title("UPK Manager for Blade & Soul v" + version)
@@ -52,6 +52,38 @@ class UPKManager(ThemedTk):
     def show_frame(self, c):
         this = self.frames[c]
         this.tkraise()
+
+    def move_upks(self, mode, category):
+        print(self.settings)
+        if mode == "remove":
+            src, dst = self.settings["game_location"], self.settings["backup_location"]
+        elif mode == "restore":
+            src, dst = self.settings["backup_location"], self.settings["game_location"]
+        else:
+            if self.settings["gui_mode"]:
+                messagebox.showwarning("Error", "move_upks() can't be called without defining a mode!")
+            else:
+                print("Error: move_upks() can't be called without defining a mode!")
+            return
+        if category == "all":
+            self.move_upks(mode, "animations")
+            self.move_upks(mode, "effects")
+            if self.settings["gui_mode"]:
+                messagebox.showinfo("Removal Success", "All file operations finished.")
+            else:
+                print("... all file operations finished!")
+        else:
+            # Generate list of files from json
+            upk_list = []
+            with open("./data/" + category + ".json", "r", encoding=charset) as upks:
+                values = upks.read()
+            upk_values = json.loads(values)
+            for player_class in upk_values.keys():
+                if player_class not in self.settings["remove_" + category]:
+                    continue
+                for value in upk_values[player_class]:
+                    upk_list.append(value)
+            self.move_files(upk_list, src, dst)
 
 
 class MainFrame(ttk.Frame):
@@ -111,23 +143,26 @@ class MainFrame(ttk.Frame):
         save_button.grid(row=7, column=5, sticky="w", pady=5)
 
     def load_pro_file(self, c):
-        file_name = filedialog.askopenfilename(initialdir="./profiles", title="Load Profile...",
-                                               filetypes=(("json files", "*.json"), ("all files", "*.*")))
-        with open(file_name, "r", encoding=charset) as f:
-            profile_values = f.read()
-        profile_settings = json.loads(profile_values)
-        c.settings = {"remove_animations": profile_settings["remove_animations"],
-                      "remove_effects": profile_settings["remove_effects"]}
-        for player_class in default_values["remove_animations"]:
-            if player_class in c.settings["remove_animations"]:
-                self.box_ani_vars[player_class].set(1)
-            else:
-                self.box_ani_vars[player_class].set(0)
-        for player_class in default_values["remove_effects"]:
-            if player_class in c.settings["remove_effects"]:
-                self.box_eff_vars[player_class].set(1)
-            else:
-                self.box_eff_vars[player_class].set(0)
+        try:
+            file_name = filedialog.askopenfilename(initialdir="./profiles", title="Load Profile...",
+                                                   filetypes=(("json files", "*.json"), ("all files", "*.*")))
+            with open(file_name, "r", encoding=charset) as f:
+                profile_values = f.read()
+            profile_settings = json.loads(profile_values)
+            c.settings["remove_animations"] = profile_settings["remove_animations"]
+            c.settings["remove_effects"] = profile_settings["remove_effects"]
+            for player_class in default_values["remove_animations"]:
+                if player_class in c.settings["remove_animations"]:
+                    self.box_ani_vars[player_class].set(1)
+                else:
+                    self.box_ani_vars[player_class].set(0)
+            for player_class in default_values["remove_effects"]:
+                if player_class in c.settings["remove_effects"]:
+                    self.box_eff_vars[player_class].set(1)
+                else:
+                    self.box_eff_vars[player_class].set(0)
+        except FileNotFoundError:
+            pass
 
     def save_pro_file(self, c):
         file_name = filedialog.asksaveasfilename(initialdir="./profiles", title="Save Profile...",

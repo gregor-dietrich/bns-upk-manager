@@ -111,7 +111,8 @@ def restore_all(silent=False):
     else:
         move_files(upk_list, settings["backup_location"], settings["game_location"])
         if settings["gui_mode"]:
-            messagebox.showinfo("Restore Success", "All file operations finished.")
+            if not silent:
+                messagebox.showinfo("Restore Success", "All file operations finished.")
         else:
             print("... all file operations finished!")
 
@@ -127,7 +128,7 @@ if settings["gui_mode"]:
         theme = "equilux"
     else:
         theme = "arc"
-    app = UPKManager(move_upks, restore_all, theme=theme)
+    app = UPKManager(move_files, restore_all, theme=theme)
     app.mainloop()
 else:
     # Read profiles folder
