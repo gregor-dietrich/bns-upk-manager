@@ -58,13 +58,13 @@ def move_files(files, src, dst):
         except PermissionError:
             log("ERROR: Permission denied! Skipping...")
             errors_permission += 1
-    print("... all file operations finished!")
+    log("... all file operations finished!")
     if errors_checksum > 0:
-        print("File checksum errors: " + str(errors_checksum) + "\n" + "Check your hard drive for errors!")
+        log("File checksum errors: " + str(errors_checksum) + "\n" + "Check your hard drive for errors!")
     if errors_permission > 0:
-        print("Permission denied errors: " + str(errors_path) + "\n" + "Try running as admin!")
+        log("Permission denied errors: " + str(errors_path) + "\n" + "Try running as admin!")
     if errors_path > 0:
-        print("File not found errors: " + str(errors_path))
+        log("File not found errors: " + str(errors_path))
 
 
 def move_upks(mode, category):
@@ -144,7 +144,7 @@ else:
                 elif command == 3:
                     game_folder = find_game_path()
                     if game_folder is not None:
-                        print("Success! Saving path to settings.json...")
+                        log("Success! Saving path to settings.json...")
                         settings["game_location"] = game_folder
                         with open(settings_location, "w", encoding=charset) as settings_file:
                             json.dump(settings, settings_file, sort_keys=True, indent=4)
