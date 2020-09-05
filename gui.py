@@ -5,18 +5,6 @@ from ttkthemes import ThemedTk
 from init import *
 
 
-def load_pro_file():
-    file_name = filedialog.askopenfile(initialdir="./profiles", title="Load Profile...",
-                                       filetypes=(("json files", "*.json"), ("all files", "*.*")))
-    return file_name
-
-
-def save_pro_file():
-    file_name = filedialog.asksaveasfilename(initialdir="./profiles", title="Save Profile...",
-                                             filetypes=(("json files", "*.json"), ("all files", "*.*")))
-    return file_name
-
-
 class UPKManager(ThemedTk):
     def __init__(self, move_upks, restore_all, *args, **kwargs):
         ThemedTk.__init__(self, *args, **kwargs)
@@ -72,8 +60,8 @@ class MainFrame(ttk.Frame):
         self.grid(row=0, column=0, sticky="w", padx=10, pady=10)
         # Setup labels & checkboxes for player classes
         label_count = 0
-        box_ani_vars = {}
-        box_eff_vars = {}
+        self.box_ani_vars = {}
+        self.box_eff_vars = {}
         for player_class in default_values["remove_animations"]:
             if player_class == "Archer":
                 player_class = "Zen " + player_class
@@ -84,14 +72,14 @@ class MainFrame(ttk.Frame):
             new_label = ttk.Label(self, text=player_class, font=c.font_style)
             if player_class == "Zen Archer":
                 player_class = "Archer"
-            box_ani_vars[player_class] = IntVar()
+            self.box_ani_vars[player_class] = IntVar()
             if player_class in c.settings["remove_animations"]:
-                box_ani_vars[player_class].set(1)
-            box_ani = ttk.Checkbutton(self, text="Animations", variable=box_ani_vars[player_class])
-            box_eff_vars[player_class] = IntVar()
+                self.box_ani_vars[player_class].set(1)
+            box_ani = ttk.Checkbutton(self, text="Animations", variable=self.box_ani_vars[player_class])
+            self.box_eff_vars[player_class] = IntVar()
             if player_class in c.settings["remove_effects"]:
-                box_eff_vars[player_class].set(1)
-            box_eff = ttk.Checkbutton(self, text="Effects", variable=box_eff_vars[player_class])
+                self.box_eff_vars[player_class].set(1)
+            box_eff = ttk.Checkbutton(self, text="Effects", variable=self.box_eff_vars[player_class])
             new_label.grid(row=row_ref, column=col_ref, sticky="w")
             box_ani.grid(row=row_ref, column=col_ref + 1, sticky="w")
             box_eff.grid(row=row_ref, column=col_ref + 2, sticky="w")
@@ -100,10 +88,10 @@ class MainFrame(ttk.Frame):
         # Setup label & checkbox for misc. effects
         new_label_other = ttk.Label(self, text="Other", font=c.font_style)
         new_label_other.grid(row=6, column=0, sticky="w")
-        box_eff_other_var = IntVar()
+        self.box_eff_vars["other"] = IntVar()
         if "other" in c.settings["remove_effects"]:
-            box_eff_other_var.set(1)
-        box_eff_other = ttk.Checkbutton(self, text="Effects", variable=box_eff_other_var)
+            self.box_eff_vars["other"].set(1)
+        box_eff_other = ttk.Checkbutton(self, text="Effects", variable=self.box_eff_vars["other"])
         box_eff_other.grid(row=6, column=1, sticky="w")
         # Setup buttons
         apply_button = ttk.Button(self, text="Apply",
@@ -116,11 +104,42 @@ class MainFrame(ttk.Frame):
                                      command=lambda: c.show_frame(SettingsFrame))
         settings_button.grid(row=7, column=2, sticky="w", pady=5)
         load_button = ttk.Button(self, text="Load...",
-                                 command=load_pro_file)
+                                 command=lambda: self.load_pro_file(c))
         load_button.grid(row=7, column=4, sticky="w", pady=5)
         save_button = ttk.Button(self, text="Save...",
-                                 command=save_pro_file)
+                                 command=lambda: self.save_pro_file(c))
         save_button.grid(row=7, column=5, sticky="w", pady=5)
+
+    def load_pro_file(self, c):
+        file_name = filedialog.askopenfilename(initialdir="./profiles", title="Load Profile...",
+                                               filetypes=(("json files", "*.json"), ("all files", "*.*")))
+        with open(file_name, "r", encoding=charset) as f:
+            profile_values = f.read()
+        profile_settings = json.loads(profile_values)
+        c.settings = {"remove_animations": profile_settings["remove_animations"],
+                      "remove_effects": profile_settings["remove_effects"]}
+        for player_class in default_values["remove_animations"]:
+            if player_class in c.settings["remove_animations"]:
+                self.box_ani_vars[player_class].set(1)
+            else:
+                self.box_ani_vars[player_class].set(0)
+        for player_class in default_values["remove_effects"]:
+            if player_class in c.settings["remove_effects"]:
+                self.box_eff_vars[player_class].set(1)
+            else:
+                self.box_eff_vars[player_class].set(0)
+
+    def save_pro_file(self, c):
+        file_name = filedialog.asksaveasfilename(initialdir="./profiles", title="Save Profile...",
+                                                 filetypes=(("json files", "*.json"), ("all files", "*.*")))
+        file_name = file_name.split(".")
+        if file_name[-1] != "json":
+            file_name.append("json")
+        file_name = ".".join(file_name)
+        profile_settings = {"remove_animations": c.settings["remove_animations"],
+                            "remove_effects": c.settings["remove_effects"]}
+        with open(file_name, "w", encoding=charset) as f:
+            json.dump(profile_settings, f, sort_keys=True, indent=4)
 
 
 class SettingsFrame(ttk.Frame):

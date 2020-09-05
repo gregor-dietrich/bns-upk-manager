@@ -120,11 +120,6 @@ def restore_all(silent=False):
 update()
 # Initialize Settings
 settings = init()
-# Read profiles folder
-profiles = listdir("./profiles/")
-for profile in profiles:
-    if not profile.endswith(".json"):
-        profiles.remove(profile)
 
 # Do something!
 if settings["gui_mode"]:
@@ -135,6 +130,11 @@ if settings["gui_mode"]:
     app = UPKManager(move_upks, restore_all, theme=theme)
     app.mainloop()
 else:
+    # Read profiles folder
+    profiles = listdir("./profiles/")
+    for profile in profiles:
+        if not profile.endswith(".json"):
+            profiles.remove(profile)
     while True:
         print("(0) Exit UPK Manager")
         print("(1) Apply current profile (settings.json)")
