@@ -99,8 +99,9 @@ def search_reg(scope):
         pass
 
 
-def init():
-    print("Initializing UPK Manager for Blade & Soul by Takku#0822 v" + version + "...")
+def init(silent=False):
+    if not silent:
+        print("Initializing UPK Manager for Blade & Soul by Takku#0822 v" + version + "...")
     # Check if required data is present
     if not path.exists("./data/animations.json") or not path.exists("./data/effects.json"):
         input("CRITICAL ERROR: Required data is missing! Exiting...")
@@ -123,7 +124,8 @@ def init():
         print("Successfully generated. Please adjust your settings.json!")
         input("Save your changes to settings.json and press Enter to continue...")
     # Load settings.json as dictionary
-    print("Loading settings from settings.json...")
+    if not silent:
+        print("Loading settings from settings.json...")
     with open(settings_location, "r", encoding=charset) as file:
         values = file.read()
     try:
@@ -139,7 +141,8 @@ def init():
         with open(settings_location, "w", encoding=charset) as settings_file:
             json.dump(settings_values, settings_file, sort_keys=True, indent=4)
         settings_values["game_location"] += "contents/bns/CookedPC/"
-        print("Successfully initialized. Welcome, Cricket!")
+        if not silent:
+            print("Successfully initialized. Welcome, Cricket!")
         return settings_values
     except (json.JSONDecodeError, TypeError, AttributeError):
         print("ERROR: Invalid JSON syntax detected!")

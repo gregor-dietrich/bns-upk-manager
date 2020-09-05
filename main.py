@@ -5,8 +5,8 @@ from shutil import copyfile
 
 from gui import UPKManager
 from init import charset, default_values, find_game_path, init, settings_location
-from update import update
 from tkutil import checksum, settings_load
+from update import update
 
 
 def log(string):
@@ -117,7 +117,7 @@ if settings["gui_mode"]:
     theme = "arc"
     if settings["dark_mode"]:
         theme = "equilux"
-    app = UPKManager(theme=theme)
+    app = UPKManager(move_upks, restore_all, theme=theme)
     app.mainloop()
 else:
     while True:
