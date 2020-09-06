@@ -6,6 +6,7 @@ from ttkthemes import ThemedTk
 from winreg import ConnectRegistry, EnumValue, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, OpenKey
 
 from env import *
+from update import update
 
 
 def find_game_path():
@@ -63,6 +64,7 @@ class UPKManager(ThemedTk):
     def __init__(self, move_files, restore_all, settings, *args, **kwargs):
         ThemedTk.__init__(self, *args, **kwargs)
         self.settings = settings
+        self.update = update
         self.move_files = move_files
         self.restore_all = restore_all
         # Setup Window

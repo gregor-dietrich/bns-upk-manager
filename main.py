@@ -8,7 +8,6 @@ from tkinter import messagebox
 
 from env import *
 from gui import find_game_path, UPKManager
-from update import update
 
 
 def checksum(file_name):
@@ -167,8 +166,7 @@ if settings["dark_mode"]:
     theme = "equilux"
 else:
     theme = "arc"
-# Check for Updates
-update()
 # Start App
 app = UPKManager(move_files, restore_all, settings, theme=theme)
+app.update()
 app.mainloop()
