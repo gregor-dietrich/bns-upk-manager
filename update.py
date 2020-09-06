@@ -1,4 +1,6 @@
+from tkinter import messagebox
 from os import path, listdir, system
+from sys import exit
 
 from bs4 import BeautifulSoup
 from requests import get
@@ -6,8 +8,9 @@ from requests import get
 from env import version
 
 
-def update(repo="gregor-dietrich/bns-upk-manager", current_version=version):
-    print("Checking for updates...")
+def update():
+    repo = "gregor-dietrich/bns-upk-manager"
+    current_version = version
     try:
         response = get("https://github.com/" + repo + "/releases/latest")
         doc = BeautifulSoup(response.text, "html.parser")
@@ -18,10 +21,10 @@ def update(repo="gregor-dietrich/bns-upk-manager", current_version=version):
         if float(latest_version) > float(current_version):
             decision = ""
             while decision not in ["y", "n"]:
-                decision = input("New version found! Download now (y/n)? ")
-                if decision == "y":
+                decision = messagebox.askquestion("New Update", "New version found!\nDownload now?")
+                if decision == "yes":
                     break
-                elif decision == "n":
+                elif decision == "no":
                     return
             if not path.exists("./" + file_name):
                 file_binary = get(file_url)
@@ -32,7 +35,7 @@ def update(repo="gregor-dietrich/bns-upk-manager", current_version=version):
             elif file_name.endswith(".7z"):
                 from py7zr import SevenZipFile as ZipFile
             else:
-                print("Invalid archive format!")
+                messagebox.showerror("Invalid archive", "Only .zip and .7z files are supported!")
                 return
             with ZipFile("./" + file_name, "r") as archive:
                 archive.extractall("./download")
@@ -51,9 +54,11 @@ def update(repo="gregor-dietrich/bns-upk-manager", current_version=version):
             system('cmd /c "update.bat"')
             exit()
         else:
-            print("Already up to date!")
-    except ConnectionError:
+            pass
+    except ConnectionError as e:
         print("Connection failed! Is your internet connection working?")
+        print(e)
         return
-    except (TypeError, ValueError, IndexError):
+    except (TypeError, ValueError, IndexError) as e:
         print("Something went wrong! Please try again later.")
+        print(e)

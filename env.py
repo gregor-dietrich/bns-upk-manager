@@ -1,6 +1,6 @@
 charset = "utf-8"
 settings_location = "./settings.json"
-version = "1.0.0-pre-alpha"
+version = "0.1.0"
 default_values = {
     "backup_location": "./backup/",
     "dark_mode": 0,

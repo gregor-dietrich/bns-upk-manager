@@ -3,6 +3,7 @@ from datetime import datetime
 from hashlib import sha1
 from os import listdir, mkdir, path, remove
 from shutil import copyfile
+from sys import exit
 from tkinter import messagebox
 
 from env import *
@@ -19,8 +20,6 @@ def checksum(file_name):
 
 
 def init(silent=False):
-    if not silent:
-        print("Initializing UPK Manager for Blade & Soul by Takku#0822 v" + version + "...")
     # Check if required data is present
     if not path.exists("./data/animations.json") or not path.exists("./data/effects.json"):
         if not silent:
@@ -32,21 +31,14 @@ def init(silent=False):
             pass
     # Generate default settings.json if there is none
     if not path.exists(settings_location):
-        print("File settings.json not found! Generating default...\n"
-              + "Trying to detect game folder...")
         game_path = find_game_path()
         if game_path is not None and path.exists(game_path):
-            print("Success! Saving path to settings.json...")
             default_values["game_location"] = game_path
         else:
-            print("Couldn't find game location. Please adjust manually in settings.json!")
+            messagebox.showwarning("Warning", "Couldn't find game location.\nPlease adjust manually in settings!")
         with open(settings_location, "w", encoding=charset) as settings_file:
             json.dump(default_values, settings_file, sort_keys=True, indent=4)
-        print("Successfully generated. Please adjust your settings.json!")
-        input("Save your changes to settings.json and press Enter to continue...")
     # Load settings.json as dictionary
-    if not silent:
-        print("Loading settings from settings.json...")
     with open(settings_location, "r", encoding=charset) as file:
         values = file.read()
     try:
@@ -62,8 +54,6 @@ def init(silent=False):
         with open(settings_location, "w", encoding=charset) as settings_file:
             json.dump(settings_values, settings_file, sort_keys=True, indent=4)
         settings_values["game_location"] += "contents/bns/CookedPC/"
-        if not silent:
-            print("Successfully initialized. Welcome, Cricket!")
         return settings_values
     except (json.JSONDecodeError, TypeError, AttributeError):
         if messagebox.askquestion("Error",
@@ -72,13 +62,14 @@ def init(silent=False):
             remove(settings_location)
             return init()
         else:
-            print("Exiting...")
             exit()
 
 
 def log(string):
     # Generate Timestamp
     timestamp = "(" + datetime.now().strftime("%H:%M:%S") + ") "
+    # Show Logs
+    print(timestamp + string)
     # Save Logs
     if settings["log_save"]:
         logfile = "./log/" + datetime.now().strftime("%Y.%m.%d.txt")
@@ -86,8 +77,6 @@ def log(string):
             mkdir("./log/")
         with open(logfile, "a", encoding=charset) as file:
             file.write(timestamp + string + "\n")
-    # Show Logs
-    print(timestamp + string)
 
 
 def move_files(files, src, dst):
@@ -111,15 +100,15 @@ def move_files(files, src, dst):
                     log("Checksum is valid! Removing " + file_path + "...")
                     remove(file_path)
                 else:
-                    print("ERROR: Checksum is invalid!")
+                    log("ERROR: Checksum is invalid!")
                     errors_checksum += 1
                     if path.exists(dst + file_name):
                         remove(dst + file_name)
             else:
-                print("ERROR: File not found! Skipping...")
+                log("ERROR: File not found! Skipping...")
                 errors_path += 1
         except PermissionError:
-            print("ERROR: Permission denied! Skipping...")
+            log("ERROR: Permission denied! Skipping...")
             errors_permission += 1
     if errors_checksum > 0:
         log("File checksum errors: " + str(errors_checksum) + "\n" + "Check your hard drive for errors!")
@@ -167,11 +156,9 @@ def restore_all(silent=False):
         move_files(upk_list, settings["backup_location"], settings["game_location"])
         if not silent:
             messagebox.showinfo("Restore Success", "All file operations finished.")
-            print("... all file operations finished!")
+            log("... all file operations finished!")
 
 
-# Check for Updates
-update()
 # Initialize Settings
 settings = init()
 
@@ -180,5 +167,8 @@ if settings["dark_mode"]:
     theme = "equilux"
 else:
     theme = "arc"
+# Check for Updates
+update()
+# Start App
 app = UPKManager(move_files, restore_all, settings, theme=theme)
 app.mainloop()
