@@ -1,7 +1,7 @@
 import json
 from os import path
 from sys import exit
-from tkinter import filedialog, messagebox, IntVar, ttk, END
+from tkinter import filedialog, messagebox, IntVar, ttk
 from ttkthemes import ThemedTk
 from winreg import ConnectRegistry, EnumValue, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, OpenKey
 
@@ -71,7 +71,7 @@ class UPKManager(ThemedTk):
         self.title("UPK Manager for Blade & Soul v" + version)
         if self.current_theme == "equilux":
             self.bg_color = "#464646"
-        elif self.current_theme == "yaru":
+        elif self.current_theme == "arc":
             self.bg_color = "#F5F5F5"
         else:
             self.bg_color = ""
@@ -189,7 +189,7 @@ class MainFrame(ttk.Frame):
                                  command=lambda: self.load_pro_file(c))
         load_button.grid(row=7, column=4, sticky="w", pady=5)
         save_button = ttk.Button(self, text="Save...",
-                                 command=lambda: self.save_pro_file(c))
+                                 command=lambda: self.save_pro_file())
         save_button.grid(row=7, column=5, sticky="w", pady=5)
 
     def load_pro_file(self, c):
@@ -214,15 +214,22 @@ class MainFrame(ttk.Frame):
         except FileNotFoundError:
             pass
 
-    def save_pro_file(self, c):
+    def save_pro_file(self):
         file_name = filedialog.asksaveasfilename(initialdir="./profiles", title="Save Profile...",
                                                  filetypes=(("json files", "*.json"), ("all files", "*.*")))
         file_name = file_name.split(".")
         if file_name[-1] != "json":
             file_name.append("json")
         file_name = ".".join(file_name)
-        profile_settings = {"remove_animations": c.settings["remove_animations"],
-                            "remove_effects": c.settings["remove_effects"]}
+        profile_settings = {"remove_animations": [],
+                            "remove_effects": []}
+        for player_class in default_values["remove_effects"]:
+            if self.box_eff_vars[player_class].get():
+                profile_settings["remove_effects"].append(player_class)
+            if player_class == "other":
+                continue
+            if self.box_ani_vars[player_class].get():
+                profile_settings["remove_animations"].append(player_class)
         with open(file_name, "w", encoding=charset) as f:
             json.dump(profile_settings, f, sort_keys=True, indent=4)
 
@@ -264,7 +271,7 @@ class SettingsFrame(ttk.Frame):
     def detect_game(self, c):
         game_folder = find_game_path()
         if game_folder is not None:
-            self.game_location_input.delete(0, END)
+            self.game_location_input.delete(0, 'end')
             self.game_location_input.insert(0, game_folder)
             c.settings["game_location"] = game_folder
             with open(settings_location, "w", encoding=charset) as settings_file:
@@ -274,5 +281,5 @@ class SettingsFrame(ttk.Frame):
             messagebox.showerror("Error", "Couldn't detect game folder.")
 
     def set_default(self):
-        self.backup_location_input.delete(0, END)
+        self.backup_location_input.delete(0, 'end')
         self.backup_location_input.insert(0, default_values["backup_location"])
