@@ -1,6 +1,6 @@
-from tkinter import messagebox
 from os import path, listdir, system
 from sys import exit
+from tkinter import messagebox
 
 from bs4 import BeautifulSoup
 from requests import get

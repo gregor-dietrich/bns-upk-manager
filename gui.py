@@ -2,8 +2,9 @@ import json
 from os import path
 from sys import exit
 from tkinter import filedialog, messagebox, IntVar, ttk
-from ttkthemes import ThemedTk
 from winreg import ConnectRegistry, EnumValue, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, OpenKey
+
+from ttkthemes import ThemedTk
 
 from env import *
 from update import update
@@ -49,11 +50,11 @@ def search_reg(scope):
                     game_path = name.split(".")[0].split("\\")
                     game_path.pop()
                     game_path.pop()
-                    # print("Game path found in HKCU!")
+                    # "Game path found in HKCU!"
                     return "/".join(game_path) + "/"
             elif scope == "HKLM":
                 if name == "BaseDir":
-                    # print("Game path found in HKLM!")
+                    # "Game path found in HKLM!"
                     return value
             count += 1
     except (WindowsError, OSError, FileNotFoundError):

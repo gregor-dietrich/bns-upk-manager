@@ -117,34 +117,6 @@ def move_files(files, src, dst):
         log("File not found errors: " + str(errors_path))
 
 
-def move_upks(mode, category):
-    if mode == "remove":
-        src, dst = settings["game_location"], settings["backup_location"]
-    elif mode == "restore":
-        src, dst = settings["backup_location"], settings["game_location"]
-    else:
-        messagebox.showwarning("Error", "move_upks() can't be called without defining a mode!")
-        log("Error: move_upks() can't be called without defining a mode!")
-        return
-    if category == "all":
-        move_upks(mode, "animations")
-        move_upks(mode, "effects")
-        messagebox.showinfo("Removal Success", "All file operations finished.")
-        log("... all file operations finished!")
-    else:
-        # Generate list of files from json
-        upk_list = []
-        with open("./data/" + category + ".json", "r", encoding=charset) as upks:
-            values = upks.read()
-        upk_values = json.loads(values)
-        for player_class in upk_values.keys():
-            if player_class not in settings["remove_" + category]:
-                continue
-            for value in upk_values[player_class]:
-                upk_list.append(value)
-        move_files(upk_list, src, dst)
-
-
 def restore_all(silent=False):
     upk_list = listdir(settings["backup_location"])
     if len(upk_list) == 0:
