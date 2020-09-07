@@ -52,7 +52,6 @@ def init(silent=False):
         # Dumping settings_values to settings.json
         with open(settings_location, "w", encoding=charset) as settings_file:
             json.dump(settings_values, settings_file, sort_keys=True, indent=4)
-        settings_values["game_location"] += "contents/bns/CookedPC/"
         return settings_values
     except (json.JSONDecodeError, TypeError, AttributeError):
         if messagebox.askquestion("Error",

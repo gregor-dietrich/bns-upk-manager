@@ -1,5 +1,5 @@
 import json
-from os import path
+from os import mkdir, path
 from sys import exit
 from tkinter import filedialog, messagebox, IntVar, ttk
 from winreg import ConnectRegistry, EnumValue, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, OpenKey
@@ -64,6 +64,8 @@ def search_reg(scope):
 class UPKManager(ThemedTk):
     def __init__(self, move_files, restore_all, settings, *args, **kwargs):
         ThemedTk.__init__(self, *args, **kwargs)
+        self.dark_mode_var = IntVar()
+        self.log_save_var = IntVar()
         self.settings = settings
         self.update = update
         self.move_files = move_files
@@ -106,15 +108,33 @@ class UPKManager(ThemedTk):
         self.restore_all(silent=True)
         self.move_upks("remove", "all")
 
+    def save_settings(self):
+        gui_settings = {"remove_animations": [],
+                        "remove_effects": []}
+        for player_class in default_values["remove_effects"]:
+            if self.box_eff_vars[player_class].get():
+                gui_settings["remove_effects"].append(player_class)
+            if player_class == "other":
+                continue
+            if self.box_ani_vars[player_class].get():
+                gui_settings["remove_animations"].append(player_class)
+        self.settings["remove_animations"] = gui_settings["remove_animations"]
+        self.settings["remove_effects"] = gui_settings["remove_effects"]
+        self.settings["dark_mode"] = self.dark_mode_var.get()
+        self.settings["log_save"] = self.log_save_var.get()
+        with open(settings_location, "w", encoding=charset) as f:
+            json.dump(self.settings, f, sort_keys=True, indent=4)
+
     def show_frame(self, c):
         this = self.frames[c]
         this.tkraise()
 
     def move_upks(self, mode, category):
+        temp = self.settings["game_location"] + "contents/bns/CookedPC/"
         if mode == "remove":
-            src, dst = self.settings["game_location"], self.settings["backup_location"]
+            src, dst = temp, self.settings["backup_location"]
         elif mode == "restore":
-            src, dst = self.settings["backup_location"], self.settings["game_location"]
+            src, dst = self.settings["backup_location"], temp
         else:
             messagebox.showwarning("Error", "move_upks() can't be called without defining a mode!")
             return
@@ -143,8 +163,8 @@ class MainFrame(ttk.Frame):
         self.grid(row=0, column=0, sticky="w", padx=10, pady=10)
         # Setup labels & checkboxes for player classes
         label_count = 0
-        self.box_ani_vars = {}
-        self.box_eff_vars = {}
+        c.box_ani_vars = {}
+        c.box_eff_vars = {}
         for player_class in default_values["remove_animations"]:
             if player_class == "Archer":
                 player_class = "Zen " + player_class
@@ -155,14 +175,16 @@ class MainFrame(ttk.Frame):
             new_label = ttk.Label(self, text=player_class, font=c.font_style)
             if player_class == "Zen Archer":
                 player_class = "Archer"
-            self.box_ani_vars[player_class] = IntVar()
+            c.box_ani_vars[player_class] = IntVar()
             if player_class in c.settings["remove_animations"]:
-                self.box_ani_vars[player_class].set(1)
-            box_ani = ttk.Checkbutton(self, text="Animations", variable=self.box_ani_vars[player_class])
-            self.box_eff_vars[player_class] = IntVar()
+                c.box_ani_vars[player_class].set(1)
+            box_ani = ttk.Checkbutton(self, text="Animations", variable=c.box_ani_vars[player_class],
+                                      command=c.save_settings)
+            c.box_eff_vars[player_class] = IntVar()
             if player_class in c.settings["remove_effects"]:
-                self.box_eff_vars[player_class].set(1)
-            box_eff = ttk.Checkbutton(self, text="Effects", variable=self.box_eff_vars[player_class])
+                c.box_eff_vars[player_class].set(1)
+            box_eff = ttk.Checkbutton(self, text="Effects", variable=c.box_eff_vars[player_class],
+                                      command=c.save_settings)
             new_label.grid(row=row_ref, column=col_ref, sticky="w")
             box_ani.grid(row=row_ref, column=col_ref + 1, sticky="w")
             box_eff.grid(row=row_ref, column=col_ref + 2, sticky="w")
@@ -171,10 +193,11 @@ class MainFrame(ttk.Frame):
         # Setup label & checkbox for misc. effects
         new_label_other = ttk.Label(self, text="Other", font=c.font_style)
         new_label_other.grid(row=6, column=0, sticky="w")
-        self.box_eff_vars["other"] = IntVar()
+        c.box_eff_vars["other"] = IntVar()
         if "other" in c.settings["remove_effects"]:
-            self.box_eff_vars["other"].set(1)
-        box_eff_other = ttk.Checkbutton(self, text="Effects", variable=self.box_eff_vars["other"])
+            c.box_eff_vars["other"].set(1)
+        box_eff_other = ttk.Checkbutton(self, text="Effects", variable=c.box_eff_vars["other"],
+                                        command=c.save_settings)
         box_eff_other.grid(row=6, column=1, sticky="w")
         # Setup buttons
         apply_button = ttk.Button(self, text="Apply",
@@ -190,7 +213,7 @@ class MainFrame(ttk.Frame):
                                  command=lambda: self.load_pro_file(c))
         load_button.grid(row=7, column=4, sticky="w", pady=5)
         save_button = ttk.Button(self, text="Save...",
-                                 command=lambda: self.save_pro_file())
+                                 command=lambda: self.save_pro_file(c))
         save_button.grid(row=7, column=5, sticky="w", pady=5)
 
     def load_pro_file(self, c):
@@ -204,18 +227,18 @@ class MainFrame(ttk.Frame):
             c.settings["remove_effects"] = profile_settings["remove_effects"]
             for player_class in default_values["remove_animations"]:
                 if player_class in c.settings["remove_animations"]:
-                    self.box_ani_vars[player_class].set(1)
+                    c.box_ani_vars[player_class].set(1)
                 else:
-                    self.box_ani_vars[player_class].set(0)
+                    c.box_ani_vars[player_class].set(0)
             for player_class in default_values["remove_effects"]:
                 if player_class in c.settings["remove_effects"]:
-                    self.box_eff_vars[player_class].set(1)
+                    c.box_eff_vars[player_class].set(1)
                 else:
-                    self.box_eff_vars[player_class].set(0)
+                    c.box_eff_vars[player_class].set(0)
         except FileNotFoundError:
             pass
 
-    def save_pro_file(self):
+    def save_pro_file(self, c):
         file_name = filedialog.asksaveasfilename(initialdir="./profiles", title="Save Profile...",
                                                  filetypes=(("json files", "*.json"), ("all files", "*.*")))
         file_name = file_name.split(".")
@@ -225,11 +248,11 @@ class MainFrame(ttk.Frame):
         profile_settings = {"remove_animations": [],
                             "remove_effects": []}
         for player_class in default_values["remove_effects"]:
-            if self.box_eff_vars[player_class].get():
+            if c.box_eff_vars[player_class].get():
                 profile_settings["remove_effects"].append(player_class)
             if player_class == "other":
                 continue
-            if self.box_ani_vars[player_class].get():
+            if c.box_ani_vars[player_class].get():
                 profile_settings["remove_animations"].append(player_class)
         with open(file_name, "w", encoding=charset) as f:
             json.dump(profile_settings, f, sort_keys=True, indent=4)
@@ -248,26 +271,32 @@ class SettingsFrame(ttk.Frame):
         self.game_location_label = ttk.Label(self, text="Game Location", font=c.font_style)
         self.game_location_label.grid(row=1, column=0, sticky="w")
         self.game_location_input = ttk.Entry(self)
-        self.game_location_input.insert(0, c.settings["game_location"][:-22])
+        self.game_location_input.insert(0, c.settings["game_location"])
         self.game_location_input.grid(row=1, column=1, sticky="w", padx=10, pady=2, ipady=2)
-        self.log_save_var = IntVar()
-        self.log_save_var.set(c.settings["log_save"])
-        self.log_save_box = ttk.Checkbutton(self, text="Save Log", variable=self.log_save_var)
+        c.log_save_var.set(c.settings["log_save"])
+        self.log_save_box = ttk.Checkbutton(self, text="Save Log", variable=c.log_save_var,
+                                            command=c.save_settings)
         self.log_save_box.grid(row=2, column=1, sticky="w", padx=6)
-        self.dark_mode_var = IntVar()
-        self.dark_mode_var.set(c.settings["dark_mode"])
-        self.dark_mode_box = ttk.Checkbutton(self, text="Dark Mode", variable=self.dark_mode_var)
+        c.dark_mode_var.set(c.settings["dark_mode"])
+        self.dark_mode_box = ttk.Checkbutton(self, text="Dark Mode", variable=c.dark_mode_var,
+                                             command=c.save_settings)
         self.dark_mode_box.grid(row=3, column=1, sticky="w", padx=6)
         # Setup buttons
         self.default_button = ttk.Button(self, text="Default",
-                                         command=self.set_default)
+                                         command=lambda: self.set_default(c))
         self.default_button.grid(row=0, column=2, sticky="w", padx=10, pady=5)
         self.detect_game_button = ttk.Button(self, text="Detect",
                                              command=lambda: self.detect_game(c))
         self.detect_game_button.grid(row=1, column=2, sticky="w", padx=10, pady=5)
         self.back_button = ttk.Button(self, text="Back",
-                                      command=lambda: c.show_frame(MainFrame))
+                                      command=lambda: self.back_button_clicked(c))
         self.back_button.grid(row=4, column=1, sticky="w", padx=9, pady=5)
+
+    def back_button_clicked(self, c):
+        c.settings["backup_location"] = self.backup_location_input.get()
+        c.settings["game_location"] = self.game_location_input.get()
+        c.save_settings()
+        c.show_frame(MainFrame)
 
     def detect_game(self, c):
         game_folder = find_game_path()
@@ -277,10 +306,14 @@ class SettingsFrame(ttk.Frame):
             c.settings["game_location"] = game_folder
             with open(settings_location, "w", encoding=charset) as settings_file:
                 json.dump(c.settings, settings_file, sort_keys=True, indent=4)
-            c.settings["game_location"] += "contents/bns/CookedPC/"
         else:
             messagebox.showerror("Error", "Couldn't detect game folder.")
 
-    def set_default(self):
+    def set_default(self, c):
         self.backup_location_input.delete(0, 'end')
+        if not path.exists(default_values["backup_location"]):
+            mkdir(default_values["backup_location"])
         self.backup_location_input.insert(0, default_values["backup_location"])
+        c.settings["backup_location"] = default_values["backup_location"]
+        with open(settings_location, "w", encoding=charset) as settings_file:
+            json.dump(c.settings, settings_file, sort_keys=True, indent=4)
