@@ -123,7 +123,7 @@ def restore_all(silent=False):
             messagebox.showwarning("Warning", "No files to restore!")
             log("No files to restore!")
     else:
-        move_files(upk_list, settings["backup_location"], settings["game_location"])
+        move_files(upk_list, settings["backup_location"], settings["game_location"] + "contents/bns/CookedPC/")
         if not silent:
             messagebox.showinfo("Restore Success", "All file operations finished.")
             log("... all file operations finished!")
