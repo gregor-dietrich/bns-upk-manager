@@ -211,6 +211,9 @@ class MainFrame(ttk.Frame):
     def __init__(self, p, c):
         ttk.Frame.__init__(self, p)
         self.grid(row=0, column=0, sticky="w", padx=10, pady=10)
+        info_text_label = ttk.Label(self, text="Checked Box = Remove UPK files", font="Candara 10 bold",
+                                    anchor="center")
+        info_text_label.grid(row=6, column=3, sticky="ew", columnspan=3)
         # Setup labels & checkboxes for player classes
         label_count = 0
         c.box_ani_vars = {}
