@@ -157,6 +157,49 @@ class UPKManager(ThemedTk):
             self.move_files(upk_list, src, dst)
 
 
+def load_pro_file(c):
+    try:
+        file_name = filedialog.askopenfilename(initialdir="./profiles", title="Load Profile...",
+                                               filetypes=(("json files", "*.json"), ("all files", "*.*")))
+        with open(file_name, "r", encoding=charset) as f:
+            profile_values = f.read()
+        profile_settings = json.loads(profile_values)
+        c.settings["remove_animations"] = profile_settings["remove_animations"]
+        c.settings["remove_effects"] = profile_settings["remove_effects"]
+        for player_class in default_values["remove_animations"]:
+            if player_class in c.settings["remove_animations"]:
+                c.box_ani_vars[player_class].set(1)
+            else:
+                c.box_ani_vars[player_class].set(0)
+        for player_class in default_values["remove_effects"]:
+            if player_class in c.settings["remove_effects"]:
+                c.box_eff_vars[player_class].set(1)
+            else:
+                c.box_eff_vars[player_class].set(0)
+    except FileNotFoundError:
+        pass
+
+
+def save_pro_file(c):
+    file_name = filedialog.asksaveasfilename(initialdir="./profiles", title="Save Profile...",
+                                             filetypes=(("json files", "*.json"), ("all files", "*.*")))
+    file_name = file_name.split(".")
+    if file_name[-1] != "json":
+        file_name.append("json")
+    file_name = ".".join(file_name)
+    profile_settings = {"remove_animations": [],
+                        "remove_effects": []}
+    for player_class in default_values["remove_effects"]:
+        if c.box_eff_vars[player_class].get():
+            profile_settings["remove_effects"].append(player_class)
+        if player_class == "other":
+            continue
+        if c.box_ani_vars[player_class].get():
+            profile_settings["remove_animations"].append(player_class)
+    with open(file_name, "w", encoding=charset) as f:
+        json.dump(profile_settings, f, sort_keys=True, indent=4)
+
+
 class MainFrame(ttk.Frame):
     def __init__(self, p, c):
         ttk.Frame.__init__(self, p)
@@ -210,52 +253,21 @@ class MainFrame(ttk.Frame):
                                      command=lambda: c.show_frame(SettingsFrame))
         settings_button.grid(row=7, column=2, sticky="w", pady=5)
         load_button = ttk.Button(self, text="Load...",
-                                 command=lambda: self.load_pro_file(c))
+                                 command=lambda: load_pro_file(c))
         load_button.grid(row=7, column=4, sticky="w", pady=5)
         save_button = ttk.Button(self, text="Save...",
-                                 command=lambda: self.save_pro_file(c))
+                                 command=lambda: save_pro_file(c))
         save_button.grid(row=7, column=5, sticky="w", pady=5)
 
-    def load_pro_file(self, c):
-        try:
-            file_name = filedialog.askopenfilename(initialdir="./profiles", title="Load Profile...",
-                                                   filetypes=(("json files", "*.json"), ("all files", "*.*")))
-            with open(file_name, "r", encoding=charset) as f:
-                profile_values = f.read()
-            profile_settings = json.loads(profile_values)
-            c.settings["remove_animations"] = profile_settings["remove_animations"]
-            c.settings["remove_effects"] = profile_settings["remove_effects"]
-            for player_class in default_values["remove_animations"]:
-                if player_class in c.settings["remove_animations"]:
-                    c.box_ani_vars[player_class].set(1)
-                else:
-                    c.box_ani_vars[player_class].set(0)
-            for player_class in default_values["remove_effects"]:
-                if player_class in c.settings["remove_effects"]:
-                    c.box_eff_vars[player_class].set(1)
-                else:
-                    c.box_eff_vars[player_class].set(0)
-        except FileNotFoundError:
-            pass
 
-    def save_pro_file(self, c):
-        file_name = filedialog.asksaveasfilename(initialdir="./profiles", title="Save Profile...",
-                                                 filetypes=(("json files", "*.json"), ("all files", "*.*")))
-        file_name = file_name.split(".")
-        if file_name[-1] != "json":
-            file_name.append("json")
-        file_name = ".".join(file_name)
-        profile_settings = {"remove_animations": [],
-                            "remove_effects": []}
-        for player_class in default_values["remove_effects"]:
-            if c.box_eff_vars[player_class].get():
-                profile_settings["remove_effects"].append(player_class)
-            if player_class == "other":
-                continue
-            if c.box_ani_vars[player_class].get():
-                profile_settings["remove_animations"].append(player_class)
-        with open(file_name, "w", encoding=charset) as f:
-            json.dump(profile_settings, f, sort_keys=True, indent=4)
+def switch_theme(c):
+    if c.current_theme == "equilux":
+        # c.bg_color = "#F5F5F5"
+        c.set_theme("arc")
+    elif c.current_theme == "arc":
+        # c.bg_color = "#464646"
+        c.set_theme("equilux")
+    c.save_settings()
 
 
 class SettingsFrame(ttk.Frame):
@@ -279,7 +291,7 @@ class SettingsFrame(ttk.Frame):
         self.log_save_box.grid(row=2, column=1, sticky="w", padx=6)
         c.dark_mode_var.set(c.settings["dark_mode"])
         self.dark_mode_box = ttk.Checkbutton(self, text="Dark Mode", variable=c.dark_mode_var,
-                                             command=c.save_settings)
+                                             command=lambda: switch_theme(c))
         self.dark_mode_box.grid(row=3, column=1, sticky="w", padx=6)
         # Setup buttons
         self.default_button = ttk.Button(self, text="Default",
