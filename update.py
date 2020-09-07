@@ -45,12 +45,14 @@ def update():
                 for patch_file in patch_files:
                     if patch_file.endswith(".exe"):
                         batch.write("taskkill /f /im " + patch_file + "\n")
-                batch.write("@ping -n 3 localhost> nul\n" +
+                batch.write("taskkill /f /im tk_upk_manager.exe\n" +
+                            "@ping -n 3 localhost> nul\n" +
                             "robocopy download\\ .\\ *.* /move /s /is /it\n" +
                             "rmdir /s /q download\n" +
                             "del " + file_name + "\n" +
                             "del update.bat\n" +
-                            "tk_upk_manager.exe")
+                            "del tk_upk_manager.exe\n" +
+                            "upk_manager.exe")
             system('cmd /c "update.bat"')
             exit()
         else:
