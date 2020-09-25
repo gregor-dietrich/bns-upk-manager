@@ -1,6 +1,6 @@
 charset = "utf-8"
 settings_location = "./settings.json"
-version = "1.0.0"
+version = "1.1.0"
 default_values = {
     "backup_location": "./backup/",
     "dark_mode": 0,
@@ -19,7 +19,8 @@ default_values = {
             "Warlock",
             "Soul Fighter",
             "Warden",
-            "Archer"
+            "Archer",
+            "Astromancer"
         ],
     "remove_effects":
         [
@@ -35,6 +36,7 @@ default_values = {
             "Soul Fighter",
             "Warden",
             "Archer",
+            "Astromancer",
             "other"
         ]
 }

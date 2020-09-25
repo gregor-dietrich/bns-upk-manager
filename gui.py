@@ -212,8 +212,8 @@ class MainFrame(ttk.Frame):
         ttk.Frame.__init__(self, p)
         self.grid(row=0, column=0, sticky="w", padx=10, pady=10)
         info_text_label = ttk.Label(self, text="Checked Box = Remove UPK files", font="Candara 10 bold",
-                                    anchor="center")
-        info_text_label.grid(row=6, column=3, sticky="ew", columnspan=3)
+                                    anchor="center", borderwidth=1, relief="sunken")
+        info_text_label.grid(row=8, column=0, sticky="ew", columnspan=6, ipady=1)
         # Setup labels & checkboxes for player classes
         label_count = 0
         c.box_ani_vars = {}
@@ -245,13 +245,13 @@ class MainFrame(ttk.Frame):
             label_count -= -1
         # Setup label & checkbox for misc. effects
         new_label_other = ttk.Label(self, text="Other", font=c.font_style)
-        new_label_other.grid(row=6, column=0, sticky="w")
+        new_label_other.grid(row=6, column=3, sticky="w")
         c.box_eff_vars["other"] = IntVar()
         if "other" in c.settings["remove_effects"]:
             c.box_eff_vars["other"].set(1)
         box_eff_other = ttk.Checkbutton(self, text="Effects", variable=c.box_eff_vars["other"],
                                         command=c.save_settings)
-        box_eff_other.grid(row=6, column=1, sticky="w")
+        box_eff_other.grid(row=6, column=4, sticky="w")
         # Setup buttons
         apply_button = ttk.Button(self, text="Apply",
                                   command=c.apply)
