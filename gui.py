@@ -1,4 +1,5 @@
 import json
+import threading
 from os import mkdir, path
 from sys import exit
 from tkinter import filedialog, messagebox, IntVar, ttk
@@ -257,10 +258,10 @@ class MainFrame(ttk.Frame):
         box_eff_other.grid(row=6, column=4, sticky="w")
         # Setup buttons
         apply_button = ttk.Button(self, text="Apply",
-                                  command=c.apply)
+                                  command=lambda: threading.Thread(target=c.apply).start())
         apply_button.grid(row=7, column=0, sticky="w", pady=5)
         restore_button = ttk.Button(self, text="Restore",
-                                    command=c.restore_all)
+                                    command=lambda: threading.Thread(target=c.restore_all).start())
         restore_button.grid(row=7, column=1, sticky="w", pady=5)
         settings_button = ttk.Button(self, text="Settings",
                                      command=lambda: c.show_frame(SettingsFrame))

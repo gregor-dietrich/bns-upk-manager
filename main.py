@@ -1,4 +1,5 @@
 import json
+import threading
 from datetime import datetime
 from hashlib import sha1
 from os import listdir, mkdir, path, remove
@@ -140,5 +141,6 @@ else:
 # Start App
 app = UPKManager(move_files, restore_all, settings, theme=theme)
 if settings["auto_update"]:
-    app.update()
+    t = threading.Thread(target=app.update)
+    t.start()
 app.mainloop()
