@@ -108,6 +108,7 @@ def search_reg(scope):
 class UPKManager(ThemedTk):
     def __init__(self, move_files, restore_all, settings, *args, **kwargs):
         ThemedTk.__init__(self, *args, **kwargs)
+        self.auto_update_var = IntVar()
         self.dark_mode_var = IntVar()
         self.log_save_var = IntVar()
         self.settings = settings
@@ -191,6 +192,7 @@ class UPKManager(ThemedTk):
                 gui_settings["remove_animations"].append(player_class)
         self.settings["remove_animations"] = gui_settings["remove_animations"]
         self.settings["remove_effects"] = gui_settings["remove_effects"]
+        self.settings["auto_update"] = self.auto_update_var.get()
         self.settings["dark_mode"] = self.dark_mode_var.get()
         self.settings["log_save"] = self.log_save_var.get()
         with open(settings_location, "w", encoding=charset) as f:
@@ -286,14 +288,18 @@ class SettingsFrame(ttk.Frame):
         self.game_location_input = ttk.Entry(self)
         self.game_location_input.insert(0, c.settings["game_location"])
         self.game_location_input.grid(row=1, column=1, sticky="w", padx=10, pady=2, ipady=2)
-        c.log_save_var.set(c.settings["log_save"])
-        self.log_save_box = ttk.Checkbutton(self, text="Save Log", variable=c.log_save_var,
-                                            command=c.save_settings)
-        self.log_save_box.grid(row=2, column=1, sticky="w", padx=6)
+        c.auto_update_var.set(c.settings["auto_update"])
+        self.auto_update_box = ttk.Checkbutton(self, text="Auto Update", variable=c.auto_update_var,
+                                               command=c.save_settings)
+        self.auto_update_box.grid(row=2, column=1, sticky="w", padx=6)
         c.dark_mode_var.set(c.settings["dark_mode"])
         self.dark_mode_box = ttk.Checkbutton(self, text="Dark Mode", variable=c.dark_mode_var,
                                              command=c.switch_theme)
         self.dark_mode_box.grid(row=3, column=1, sticky="w", padx=6)
+        c.log_save_var.set(c.settings["log_save"])
+        self.log_save_box = ttk.Checkbutton(self, text="Save Log", variable=c.log_save_var,
+                                            command=c.save_settings)
+        self.log_save_box.grid(row=4, column=1, sticky="w", padx=6)
         # Setup buttons
         self.default_button = ttk.Button(self, text="Default",
                                          command=lambda: self.set_default(c))
@@ -303,7 +309,7 @@ class SettingsFrame(ttk.Frame):
         self.detect_game_button.grid(row=1, column=2, sticky="w", padx=10, pady=5)
         self.back_button = ttk.Button(self, text="Back",
                                       command=lambda: self.back_button_clicked(c))
-        self.back_button.grid(row=4, column=1, sticky="w", padx=9, pady=5)
+        self.back_button.grid(row=5, column=1, sticky="w", padx=9, pady=5)
 
     def back_button_clicked(self, c):
         c.settings["backup_location"] = self.backup_location_input.get()
