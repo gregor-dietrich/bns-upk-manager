@@ -139,5 +139,6 @@ else:
     theme = "arc"
 # Start App
 app = UPKManager(move_files, restore_all, settings, theme=theme)
-app.update()
+if settings["auto_update"]:
+    app.update()
 app.mainloop()

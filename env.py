@@ -2,6 +2,7 @@ charset = "utf-8"
 settings_location = "./settings.json"
 version = "1.1.1"
 default_values = {
+    "auto_update": 1,
     "backup_location": "./backup/",
     "dark_mode": 0,
     "game_location": "C:/Program Files (x86)/NCSOFT/BnS/",
