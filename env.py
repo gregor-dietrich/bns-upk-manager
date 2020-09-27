@@ -1,6 +1,6 @@
 charset = "utf-8"
 settings_location = "./settings.json"
-version = "1.1.1"
+version = "1.2.0"
 default_values = {
     "auto_update": 1,
     "backup_location": "./backup/",
