@@ -50,6 +50,7 @@ def load_pro_file(c):
                 c.box_eff_vars[player_class].set(1)
             else:
                 c.box_eff_vars[player_class].set(0)
+        c.save_settings()
     except FileNotFoundError:
         pass
 
