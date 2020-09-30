@@ -1,6 +1,6 @@
 import json
 import threading
-from os import mkdir, path
+from os import mkdir, path, startfile
 from sys import exit
 from tkinter import filedialog, messagebox, IntVar, ttk
 from winreg import ConnectRegistry, EnumValue, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, OpenKey
@@ -305,9 +305,19 @@ class SettingsFrame(ttk.Frame):
         self.default_button = ttk.Button(self, text="Default",
                                          command=lambda: self.set_default(c))
         self.default_button.grid(row=0, column=2, sticky="w", padx=10, pady=5)
+        self.open_backup_folder_button = ttk.Button(self, text="Open",
+                                                    command=lambda: startfile(c.settings["backup_location"][2:-1]))
+        self.open_backup_folder_button.grid(row=0, column=3, sticky="w", padx=10, pady=5)
         self.detect_game_button = ttk.Button(self, text="Detect",
                                              command=lambda: self.detect_game(c))
         self.detect_game_button.grid(row=1, column=2, sticky="w", padx=10, pady=5)
+        self.open_game_folder_button = ttk.Button(self, text="Open",
+                                                  command=lambda: startfile(c.settings["game_location"]))
+        self.open_game_folder_button.grid(row=1, column=3, sticky="w", padx=10, pady=5)
+        self.open_upk_folder_button = ttk.Button(self, text="CookedPC",
+                                                 command=lambda: startfile(c.settings["game_location"] +
+                                                                           "contents/bns/CookedPC/"))
+        self.open_upk_folder_button.grid(row=2, column=3, sticky="w", padx=10, pady=5)
         self.back_button = ttk.Button(self, text="Back",
                                       command=lambda: self.back_button_clicked(c))
         self.back_button.grid(row=5, column=1, sticky="w", padx=9, pady=5)
